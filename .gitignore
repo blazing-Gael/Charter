@@ -1,0 +1,14 @@
+# secrets
+.env
+
+# local database + generated output
+docs.db
+docs.db-*
+/public/
+
+# build artifacts
+/dcms-docs
+/dcms-docs.exe
+
+# keep the example env
+!.env.example

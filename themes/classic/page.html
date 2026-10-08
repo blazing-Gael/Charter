@@ -1,0 +1,14 @@
+{{define "page"}}{{template "shell_start" .}}
+  <article class="doc" data-pagefind-body>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">{{.SiteName}}</a>
+      <i class="ph ph-caret-right"></i>
+      <span>{{.Title}}</span>
+    </nav>
+    <h1 class="doc__title" data-pagefind-meta="title">{{.Title}}</h1>
+    <div class="doc__body">{{.Content}}</div>
+    <footer class="doc__foot">
+      <span>Built with <a href="https://github.com/blazing-Gael/dcms">DCMS</a></span>
+    </footer>
+  </article>
+{{template "shell_end" .}}{{end}}

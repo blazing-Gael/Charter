@@ -1,0 +1,36 @@
+{{define "edit"}}{{template "head" .}}
+<body class="is-editing">
+  <header class="topbar topbar--edit">
+    <div class="topbar__group">
+      <button class="icon-btn" data-sidebar-toggle aria-label="Toggle sidebar"><i class="ph ph-list"></i></button>
+      <a class="brand" href="/"><span class="brand__mark">▚</span><span class="brand__name">{{.SiteName}}</span></a>
+      <span class="badge {{if .Published}}badge--live{{else}}badge--draft{{end}}" id="status-badge">{{if .Published}}Published{{else}}Draft{{end}}</span>
+    </div>
+    <div class="topbar__group" data-edit-id="{{.EditID}}" data-edit-slug="{{.EditSlug}}" data-published="{{.Published}}">
+      <a class="icon-btn" href="/p/{{.EditSlug}}" aria-label="View live"><i class="ph ph-eye"></i></a>
+      <button class="btn btn-ghost btn--sm" data-action="save"><i class="ph ph-floppy-disk"></i> Save</button>
+      <button class="btn btn--sm" data-action="publish">{{if .Published}}Unpublish{{else}}Publish{{end}}</button>
+      <button class="btn btn-ghost btn--sm" data-action="export"><i class="ph ph-export"></i> Export</button>
+      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle theme">
+        <i class="ph ph-moon icon-dark"></i><i class="ph ph-sun icon-light"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+{{template "sidebar" .}}
+    <main class="content">
+      <article class="doc">
+        <input id="edit-title" class="edit-title" value="{{.Title}}" placeholder="Page title" autocomplete="off">
+        <!-- The content region. A stubbed contenteditable today; your DOM editor mounts
+             onto #doc-editor and keeps its innerHTML as the saved body (HTML). -->
+        <div id="doc-editor" class="doc__body" contenteditable="true" spellcheck="true" data-placeholder="Start writing…">{{.Content}}</div>
+      </article>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="/assets/app.js" defer></script>
+  <script src="/assets/edit.js" defer></script>
+</body>
+</html>{{end}}

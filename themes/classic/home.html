@@ -1,0 +1,26 @@
+{{define "home"}}{{template "shell_start" .}}
+  <div class="home" data-pagefind-body>
+    <section class="hero">
+      <h1 class="hero__title">{{.SiteName}}</h1>
+      <div class="hero__intro">{{.HomeIntro}}</div>
+      <div class="hero__actions">
+        <button class="btn" data-search-open><i class="ph ph-magnifying-glass"></i> Search the docs <kbd class="kbd kbd--on-dark">Ctrl K</kbd></button>
+      </div>
+    </section>
+    {{range .Nav}}
+      {{if .Children}}
+      <section class="home-group">
+        {{if .Title}}<h2 class="home-group__title">{{.Title}}</h2>{{end}}
+        <div class="cards">
+          {{range .Children}}{{if .HasPage}}
+          <a class="card" href="/p/{{.Slug}}">
+            <span class="card__name">{{.Title}}</span>
+            <i class="ph ph-arrow-right card__arrow"></i>
+          </a>
+          {{end}}{{end}}
+        </div>
+      </section>
+      {{end}}
+    {{end}}
+  </div>
+{{template "shell_end" .}}{{end}}

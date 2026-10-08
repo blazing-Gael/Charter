@@ -1,0 +1,14 @@
+schema: ./schema.yaml
+
+database:
+  driver: sqlite
+  path: ./docs.db
+
+# Built-in admin panel at /__admin — authors sign in here to write and publish pages
+# until the custom editor is wired in. Only admin/editor may open it.
+admin:
+  enabled: true
+  roles: [admin, editor]
+
+server:
+  port: 8080

@@ -1,0 +1,49 @@
+version: "1"
+
+meta:
+  name: dcms-docs
+  description: "A Git-free documentation CMS built on DCMS: write in the browser, export to a static site."
+
+auth:
+  roles:
+    admin:  { label: Administrator }   # manages sites, deletes, triggers export
+    editor: { label: Editor }          # writes and publishes pages
+
+collections:
+  # A documentation space. One instance can host several (multi-site routing is a
+  # later step). `visibility` decides how it's served: `public` exports to static
+  # files; `private` is served live behind auth.
+  sites:
+    access: { read: public, create: [admin], update: [admin], delete: [admin] }
+    fields:
+      name:       { type: string, required: true }
+      slug:       { type: string, unique: true }
+      visibility: { type: enum, values: [public, private], default: public }
+      theme:      { type: string, default: "classic" }
+      home_intro: { type: text }   # markdown shown on the site homepage
+
+  # The whole documentation tree — one self-referential collection, not pages-inside-
+  # sections. Every sidebar entry is a node; `parent` builds the tree and `order` sorts
+  # siblings. The node's shape decides how it renders (see the editor/theme):
+  #   kind: label            → a static section header (not clickable, not collapsible)
+  #   kind: page, has body, no children  → a plain link
+  #   kind: page, no body, has children  → a dropdown (collapsible, no page of its own)
+  #   kind: page, has body + children    → a link that is ALSO a dropdown (split click)
+  # `slug` is only needed for nodes that are real pages (routed at /p/<slug>); labels
+  # and pure dropdowns can omit it.
+  pages:
+    publishing: true
+    revisions:  true
+    access:
+      read:   public
+      create: [admin, editor]
+      update: [admin, editor]
+      delete: [admin]
+    fields:
+      title:  { type: string, required: true }
+      slug:   { type: string, unique: true }
+      kind:   { type: enum, values: [page, label], default: page }
+      body:   { type: text }                     # markdown; empty = dropdown/label
+      order:  { type: integer, default: 0 }
+      parent: { type: relation, target: pages }  # self-reference → the nav tree
+      site:   { type: relation, target: sites }

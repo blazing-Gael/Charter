@@ -1,0 +1,106 @@
+{{define "head"}}<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}} · {{.SiteName}}</title>
+  <!-- No-flash theme: set before first paint. -->
+  <script>(function(){try{var t=localStorage.getItem('docs-theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>{{end}}
+
+{{define "sidebar"}}
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__filter">
+        <i class="ph ph-funnel-simple"></i>
+        <input id="sidebar-filter" type="text" placeholder="Filter sidebar" autocomplete="off" spellcheck="false" aria-label="Filter sidebar">
+        <kbd class="kbd kbd--slash">/</kbd>
+      </div>
+      <nav class="nav" aria-label="Documentation">
+        {{range .Nav}}{{template "navnode" .}}{{end}}
+      </nav>
+    </aside>
+    <div class="scrim" data-sidebar-toggle aria-hidden="true"></div>
+{{end}}
+
+{{define "shell_start"}}{{template "head" .}}
+<body>
+  <header class="topbar">
+    <div class="topbar__group">
+      <button class="icon-btn" data-sidebar-toggle aria-label="Toggle sidebar"><i class="ph ph-list"></i></button>
+      <a class="brand" href="/">
+        <span class="brand__mark">▚</span>
+        <span class="brand__name">{{.SiteName}}</span>
+      </a>
+      {{if .Draft}}<span class="badge badge--draft">Draft</span>{{end}}
+    </div>
+    <div class="topbar__group">
+      <button class="search-btn" data-search-open aria-label="Search">
+        <i class="ph ph-magnifying-glass"></i>
+        <span class="search-btn__label">Search</span>
+        <kbd class="kbd"><span class="kbd__cmd">Ctrl</span> K</kbd>
+      </button>
+      {{if and .CanEdit .EditSlug}}<a class="btn btn--sm" href="/__edit/{{.EditSlug}}"><i class="ph ph-pencil-simple"></i> Edit</a>{{end}}
+      <a class="icon-btn" href="https://github.com/blazing-Gael/dcms" target="_blank" rel="noopener" aria-label="GitHub"><i class="ph ph-github-logo"></i></a>
+      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle theme">
+        <i class="ph ph-moon icon-dark"></i><i class="ph ph-sun icon-light"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+{{template "sidebar" .}}
+    <main class="content">{{end}}
+
+{{define "shell_end"}}</main>
+  </div>
+
+  <dialog class="search" id="search-dialog" aria-label="Search">
+    <div class="search__head">
+      <i class="ph ph-magnifying-glass"></i>
+      <input id="search-input" type="text" placeholder="Search documentation…" autocomplete="off" spellcheck="false">
+      <kbd class="kbd">Esc</kbd>
+    </div>
+    <ul class="search__results" id="search-results"><li class="search-empty">Type to search</li></ul>
+    <div class="search__foot">
+      <span><kbd class="kbd kbd--mini">↑</kbd><kbd class="kbd kbd--mini">↓</kbd> navigate</span>
+      <span><kbd class="kbd kbd--mini">↵</kbd> open</span>
+      <span><kbd class="kbd kbd--mini">esc</kbd> close</span>
+    </div>
+  </dialog>
+
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>{{end}}
+
+{{/* navnode renders one sidebar entry recursively. Four shapes:
+     label             → static section header (not clickable, not collapsible)
+     page + children   → a dropdown; also a link when HasPage (split click: the
+                         label navigates, the chevron toggles)
+     page, no children → a plain link */}}
+{{define "navnode"}}
+{{- if eq .Kind "label"}}
+  <div class="nav-group">
+    <div class="nav-label">{{.Title}}</div>
+    {{if .Children}}<div class="nav-children nav-children--flush">{{range .Children}}{{template "navnode" .}}{{end}}</div>{{end}}
+  </div>
+{{- else if .Children}}
+  <div class="nav-node" data-collapsible data-key="{{.Kind}}:{{.Slug}}:{{.Title}}">
+    <div class="nav-node__row">
+      {{if .HasPage}}
+      <a class="nav-link nav-node__label{{if .Current}} is-current{{end}}" href="/p/{{.Slug}}">{{.Title}}</a>
+      {{else}}
+      <button class="nav-link nav-node__label nav-node__label--btn" type="button" data-toggle>{{.Title}}</button>
+      {{end}}
+      <button class="nav-node__chev" type="button" data-toggle aria-label="Toggle section"><i class="ph ph-caret-down"></i></button>
+    </div>
+    <div class="nav-node__body"><div class="nav-children">{{range .Children}}{{template "navnode" .}}{{end}}</div></div>
+  </div>
+{{- else}}
+  <a class="nav-link{{if .Current}} is-current{{end}}" href="/p/{{.Slug}}">{{.Title}}</a>
+{{- end}}
+{{end}}

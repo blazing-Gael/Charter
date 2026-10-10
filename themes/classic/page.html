@@ -1,4 +1,5 @@
 {{define "page"}}{{template "shell_start" .}}
+  <div class="doc-layout">
   <article class="doc" data-pagefind-body>
     <nav class="crumbs" aria-label="Breadcrumb">
       <a href="/">{{.SiteName}}</a>
@@ -6,9 +7,69 @@
       <span>{{.Title}}</span>
     </nav>
     <h1 class="doc__title" data-pagefind-meta="title">{{.Title}}</h1>
+    {{if .Description}}<p class="doc__lead" data-pagefind-meta="description">{{.Description}}</p>{{end}}
+    {{if or .Author .Updated .Badges .MDUrl}}
+    <div class="doc__header">
+      <div class="doc__meta">
+        {{if .Author}}<span class="doc__by"><i class="ph ph-user-circle"></i> {{.Author}}</span>{{end}}
+        {{if .Updated}}<span class="doc__meta-item"><i class="ph ph-clock-counter-clockwise"></i> Updated {{.Updated}}</span>{{end}}
+        {{range .Badges}}<span class="doc__badge">{{.}}</span>{{end}}
+      </div>
+      {{if .MDUrl}}
+      <div class="doc__actions" data-page-actions data-md-url="{{.MDUrl}}" data-title="{{.Title}}">
+        <button type="button" class="doc-action doc-action--main" data-copy-page data-tip="Copy page as Markdown" data-tip-pos="bottom"><i class="ph ph-copy"></i><span class="doc-action__label">Copy page</span></button>
+        <button type="button" class="doc-action doc-action--caret" data-page-menu aria-label="Page options" aria-haspopup="true" aria-expanded="false" data-tip="Open in AI / Markdown" data-tip-pos="bottom"><i class="ph ph-caret-down"></i></button>
+      </div>
+      {{end}}
+    </div>
+    {{end}}
+    <hr class="doc__rule">
     <div class="doc__body">{{.Content}}</div>
+
+    {{if .PageID}}
+    <div class="feedback" data-feedback data-page="{{.PageID}}">
+      <div class="feedback__ask">
+        <span class="feedback__q">How is this guide?</span>
+        <div class="feedback__btns">
+          <button type="button" class="feedback__btn" data-rating="good"><i class="ph ph-thumbs-up"></i> Good</button>
+          <button type="button" class="feedback__btn" data-rating="bad"><i class="ph ph-thumbs-down"></i> Bad</button>
+        </div>
+      </div>
+      <div class="feedback__form">
+        <textarea class="feedback__text" rows="3" placeholder="Leave your feedback…" aria-label="Feedback"></textarea>
+        {{if ne .FeedbackEmail "none"}}<input type="email" class="feedback__email" placeholder="Email{{if eq .FeedbackEmail "optional"}} (optional){{end}}"{{if eq .FeedbackEmail "required"}} required{{end}} aria-label="Email">{{end}}
+        <button type="button" class="feedback__submit" data-submit>Submit</button>
+      </div>
+      <div class="feedback__done" hidden>Thanks for the feedback.</div>
+    </div>
+    {{end}}
+
+    {{if or .Prev .Next}}
+    <nav class="pager" aria-label="Page navigation">
+      {{if .Prev}}<a class="pager__card pager__card--prev" href="/p/{{.Prev.Slug}}">
+        <span class="pager__dir"><i class="ph ph-arrow-left"></i> Previous</span>
+        <span class="pager__title">{{.Prev.Title}}</span>
+      </a>{{else}}<span></span>{{end}}
+      {{if .Next}}<a class="pager__card pager__card--next" href="/p/{{.Next.Slug}}">
+        <span class="pager__dir">Next <i class="ph ph-arrow-right"></i></span>
+        <span class="pager__title">{{.Next.Title}}</span>
+      </a>{{end}}
+    </nav>
+    {{end}}
     <footer class="doc__foot">
       <span>Built with <a href="https://github.com/blazing-Gael/dcms">DCMS</a></span>
     </footer>
   </article>
+  {{if .TOC}}
+  <aside class="toc">
+    <nav class="toc__inner" aria-label="On this page" data-scrollspy data-scrollspy-content=".doc__body">
+      <div class="toc__title"><i class="ph ph-list-dashes"></i> On this page</div>
+      <ul class="toc__list">
+        {{range .TOC}}<li><a class="toc__link toc__link--h{{.Level}}" href="#{{.ID}}" data-scrollspy-link="{{.ID}}">{{.Text}}</a></li>
+        {{end}}
+      </ul>
+    </nav>
+  </aside>
+  {{end}}
+  </div>
 {{template "shell_end" .}}{{end}}

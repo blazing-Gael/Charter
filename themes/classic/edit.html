@@ -1,17 +1,18 @@
 {{define "edit"}}{{template "head" .}}
+<link rel="stylesheet" href="/assets/editor-chrome.css">
 <body class="is-editing">
   <header class="topbar topbar--edit">
     <div class="topbar__group">
-      <button class="icon-btn" data-sidebar-toggle aria-label="Toggle sidebar"><i class="ph ph-list"></i></button>
+      <button class="icon-btn" data-sidebar-toggle aria-label="Toggle sidebar" data-tip="Toggle sidebar" data-tip-pos="bottom"><i class="ph ph-list"></i></button>
       <a class="brand" href="/"><span class="brand__mark">▚</span><span class="brand__name">{{.SiteName}}</span></a>
       <span class="badge {{if .Published}}badge--live{{else}}badge--draft{{end}}" id="status-badge">{{if .Published}}Published{{else}}Draft{{end}}</span>
     </div>
     <div class="topbar__group" data-edit-id="{{.EditID}}" data-edit-slug="{{.EditSlug}}" data-published="{{.Published}}">
-      <a class="icon-btn" href="/p/{{.EditSlug}}" aria-label="View live"><i class="ph ph-eye"></i></a>
-      <button class="btn btn-ghost btn--sm" data-action="save"><i class="ph ph-floppy-disk"></i> Save</button>
+      <a class="icon-btn" href="/p/{{.EditSlug}}" aria-label="View live" data-tip="View live page" data-tip-pos="bottom"><i class="ph ph-eye"></i></a>
+      <button class="btn btn-ghost btn--sm" data-action="save" data-tip="Save (Ctrl+S)" data-tip-pos="bottom"><i class="ph ph-floppy-disk"></i> Save</button>
       <button class="btn btn--sm" data-action="publish">{{if .Published}}Unpublish{{else}}Publish{{end}}</button>
-      <button class="btn btn-ghost btn--sm" data-action="export"><i class="ph ph-export"></i> Export</button>
-      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle theme">
+      <button class="btn btn-ghost btn--sm" data-action="export" data-tip="Build static site" data-tip-pos="bottom"><i class="ph ph-export"></i> Export</button>
+      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle theme" data-tip="Toggle theme" data-tip-pos="bottom">
         <i class="ph ph-moon icon-dark"></i><i class="ph ph-sun icon-light"></i>
       </button>
     </div>
@@ -20,17 +21,71 @@
   <div class="layout">
 {{template "sidebar" .}}
     <main class="content">
+      <div class="doc-layout">
       <article class="doc">
         <input id="edit-title" class="edit-title" value="{{.Title}}" placeholder="Page title" autocomplete="off">
-        <!-- The content region. A stubbed contenteditable today; your DOM editor mounts
-             onto #doc-editor and keeps its innerHTML as the saved body (HTML). -->
-        <div id="doc-editor" class="doc__body" contenteditable="true" spellcheck="true" data-placeholder="Start writing…">{{.Content}}</div>
+        <input id="edit-description" class="edit-subtitle" value="{{.Description}}" placeholder="Add a short description (optional)" autocomplete="off">
+        <div class="edit-meta">
+          <label class="edit-meta__field"><i class="ph ph-user-circle"></i><input id="edit-author" value="{{.Author}}" placeholder="Author" autocomplete="off"></label>
+          <label class="edit-meta__field"><i class="ph ph-tag"></i><input id="edit-badges" value="{{.BadgesRaw}}" placeholder="Badges, comma-separated" autocomplete="off"></label>
+        </div>
+        <hr class="doc__rule">
+        <!-- The editing surface. #doc-editor is the engine's `.compose-body`; the
+             wrap + toolbar are what composeEditorWrapper looks for. -->
+        <div class="compose-editor-wrap">
+          <div class="rte-toolbar" role="toolbar" aria-label="Formatting">
+            <button type="button" class="rte-btn" data-action="h2" aria-label="Heading 2" data-tip="Heading 2" data-tip-pos="bottom"><i class="ph ph-text-h-two"></i></button>
+            <button type="button" class="rte-btn" data-action="h3" aria-label="Heading 3" data-tip="Heading 3" data-tip-pos="bottom"><i class="ph ph-text-h-three"></i></button>
+            <button type="button" class="rte-btn" data-action="paragraph" aria-label="Text" data-tip="Text" data-tip-pos="bottom"><i class="ph ph-paragraph"></i></button>
+            <span class="rte-sep"></span>
+            <button type="button" class="rte-btn compose-toolbar-btn" data-action="bold" aria-label="Bold" data-tip="Bold (Ctrl+B)" data-tip-pos="bottom"><i class="ph ph-text-b"></i></button>
+            <button type="button" class="rte-btn compose-toolbar-btn" data-action="italic" aria-label="Italic" data-tip="Italic (Ctrl+I)" data-tip-pos="bottom"><i class="ph ph-text-italic"></i></button>
+            <button type="button" class="rte-btn compose-toolbar-btn" data-action="strikeThrough" aria-label="Strikethrough" data-tip="Strikethrough" data-tip-pos="bottom"><i class="ph ph-text-strikethrough"></i></button>
+            <span class="rte-sep"></span>
+            <button type="button" class="rte-btn" data-action="insertUnorderedList" aria-label="Bulleted list" data-tip="Bulleted list" data-tip-pos="bottom"><i class="ph ph-list-bullets"></i></button>
+            <button type="button" class="rte-btn" data-action="insertOrderedList" aria-label="Numbered list" data-tip="Numbered list" data-tip-pos="bottom"><i class="ph ph-list-numbers"></i></button>
+            <button type="button" class="rte-btn" data-action="blockquote" aria-label="Quote" data-tip="Quote" data-tip-pos="bottom"><i class="ph ph-quotes"></i></button>
+            <span class="rte-sep"></span>
+            <button type="button" class="rte-btn" data-rte="link" aria-label="Link" data-tip="Link (Ctrl+K)" data-tip-pos="bottom"><i class="ph ph-link"></i></button>
+          </div>
+          <div id="doc-editor" class="doc__body compose-body" contenteditable="true" spellcheck="true" data-placeholder="Start writing…">{{.Content}}</div>
+        </div>
+        {{if or .Prev .Next}}
+        <nav class="pager" aria-label="Page navigation">
+          {{if .Prev}}<a class="pager__card pager__card--prev" href="/__edit/{{.Prev.Slug}}">
+            <span class="pager__dir"><i class="ph ph-arrow-left"></i> Previous</span>
+            <span class="pager__title">{{.Prev.Title}}</span>
+          </a>{{else}}<span></span>{{end}}
+          {{if .Next}}<a class="pager__card pager__card--next" href="/__edit/{{.Next.Slug}}">
+            <span class="pager__dir">Next <i class="ph ph-arrow-right"></i></span>
+            <span class="pager__title">{{.Next.Title}}</span>
+          </a>{{end}}
+        </nav>
+        {{end}}
       </article>
+      <aside class="toc">
+        <div class="toc__inner comments" data-comments data-page="{{.EditID}}">
+          <div class="toc__title">
+            <i class="ph ph-chat-circle"></i> Comments <span class="comments__count" hidden></span>
+            <button type="button" class="comments__toggle" data-comments-toggle aria-label="Hide comments"><i class="ph ph-caret-up"></i></button>
+          </div>
+          <ul class="comments__list"></ul>
+          <div class="comments__empty">No feedback yet.</div>
+        </div>
+      </aside>
+      </div>
     </main>
   </div>
 
   <div class="toast" id="toast" hidden></div>
+  <script src="/editor/editor.js" defer></script>
+  <script src="/assets/editor-boot.js" defer></script>
+  <script src="/assets/editor-slash.js" defer></script>
+  <script src="/assets/editor-link.js" defer></script>
+  <script src="/assets/editor-bubble.js" defer></script>
   <script src="/assets/app.js" defer></script>
+  <script src="/assets/editor-sidebar-dnd.js" defer></script>
+  <script src="/assets/editor-comments.js" defer></script>
   <script src="/assets/edit.js" defer></script>
 </body>
 </html>{{end}}

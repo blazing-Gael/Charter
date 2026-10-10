@@ -634,6 +634,26 @@ function _moveLineInto(fresh, source) {
   return fresh;
 }
 
+/* DOCS retag: change a line's tag WITHOUT baking the old tag's rendered look onto
+   it. Unlike _moveLineInto (which preserves size across a convert for mail, where
+   there is no shared stylesheet), here the THEME owns heading size — so the new
+   line is decorated for its own tag and nothing of the old one's decoration is
+   carried. Author marks live on the inner runs and move with the children; only
+   the line-level decoration (margins, heading size/weight) is dropped.
+   _shedStatedWeight then clears any `font-weight:normal` a former heading's runs
+   declared to opt out of a boldness the new tag no longer has. */
+function _retagLine(line, tag) {
+  const fresh = newEl(tag);                       // decorated for the NEW tag
+  LINE_ATTRS.forEach(a => {
+    const v = line.getAttribute(a);
+    if (v !== null) fresh.setAttribute(a, v);
+  });
+  while (line.firstChild) fresh.appendChild(line.firstChild);
+  _shedStatedWeight(fresh);
+  line.replaceWith(fresh);
+  return fresh;
+}
+
 /* The line's marks belong INSIDE the item: ::marker inherits from the <li>, so a
    weight or a size left on it would restyle the bullet as well. renderInto reads
    them back off the block and settles them onto the runs — the same door that
@@ -2429,6 +2449,22 @@ const Commands = {
       .forEach(group => quoteBlocks(group));
   },
 
+  /* args = { tag } — 'h1'..'h6' or 'p'. Retags each covered top-level line to a
+     heading or paragraph; the THEME styles the result (see _retagLine). Toggles:
+     asking a line for the tag it already has sends it back to a paragraph, which
+     is what a heading button does in Notion/Docs. A line inside a list keeps being
+     an item — headings-in-lists aren't a docs shape, so those are left alone. */
+  block(ctx, { tag }) {
+    const target = (tag || 'p').toLowerCase();
+    resolveBlocks(ctx.selection)
+      .filter(b => b.tagName !== 'LI')
+      .forEach(line => {
+        const cur = line.tagName.toLowerCase();
+        const to = (cur === target && target !== 'p') ? 'p' : target;
+        if (cur !== to) _retagLine(line, to);
+      });
+  },
+
   /* Inline marks go everywhere the selection touches; DEPTH — the indent and the
      containers holding it — goes only for lines covered END TO END, so half a
      quoted line loses its marks without being unquoted. That rule is also what
@@ -4031,6 +4067,8 @@ function composeEditorWrapper(elm) {
   if (elm.dataset.image) { editor.exec('image', { action: elm.dataset.image, value: elm.dataset.value }); return editable.innerHTML; }
   // data-direction="rtl|ltr" — the pair of buttons Gmail shows once RTL is on.
   if (elm.dataset.direction) { editor.exec('direction', { value: elm.dataset.direction }); return editable.innerHTML; }
+  if (/^h[1-6]$/.test(elm.dataset.action || '')) { editor.exec('block', { tag: elm.dataset.action }); return editable.innerHTML; }
+  if (elm.dataset.action === 'paragraph') { editor.exec('block', { tag: 'p' }); return editable.innerHTML; }
   if (elm.dataset.action === 'blockquote') { editor.exec('blockquote', {}); return editable.innerHTML; }
   if (elm.dataset.action === 'insertUnorderedList') { editor.exec('list', { tag: 'ul' }); return editable.innerHTML; }
   if (elm.dataset.action === 'insertOrderedList') { editor.exec('list', { tag: 'ol' }); return editable.innerHTML; }
@@ -4765,6 +4803,9 @@ window.syncFontTriggerLabel = syncFontTriggerLabel;
 window.flushCaretFormat = flushCaretFormat;
 window.editImage = editImage;
 window.insertBlocks = insertBlocks;       // the app's own markup — signature, template, image
+// A clean programmatic door for a slash menu / command palette: run any command by
+// name without a toolbar element to read a dataset off. One undo step, like exec.
+window.composeCommand = (editable, name, args) => editorFor(editable).exec(name, args || {});
 window.mentionQueryAt = mentionQueryAt;   // pair its .range with insertLink — see there
 window.insertLink = insertLink;
 window.updateLink = updateLink;

@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"embed"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -73,12 +75,29 @@ func (s *Site) Export(ctx context.Context, st dcms.HookStore, outDir string) (in
 		if err != nil {
 			return 0, err
 		}
+		prev, next := neighbors(nav, str(p["slug"]))
+		content, toc := withHeadingIDs(str(p["body"]))
 		dir := filepath.Join(outDir, "p", str(p["slug"]))
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return 0, err
 		}
 		if err := s.writeFile(filepath.Join(dir, "index.html"), "page",
-			pageView{SiteName: siteName(site), Title: str(p["title"]), Nav: nav, Content: bodyHTML(p["body"])}); err != nil {
+			pageView{
+				SiteName: siteName(site), Title: str(p["title"]), Nav: nav,
+				Content: content, TOC: toc, Prev: prev, Next: next,
+				Description: str(p["description"]), Author: str(p["author"]),
+				Badges: splitBadges(str(p["badges"])),
+				// Relative, so "Copy page / Open in AI" resolve against the deployed
+				// origin (export doesn't know the final domain; the client builds the
+				// absolute URL from location.href).
+				MDUrl:   "index.md",
+				Updated: fmtDate(p["updated_at"]),
+			}); err != nil {
+			return 0, err
+		}
+		// Sibling Markdown file for the AI/copy actions.
+		md := pageMarkdown(str(p["title"]), str(p["description"]), str(p["body"]))
+		if err := os.WriteFile(filepath.Join(dir, "index.md"), []byte(md), 0o644); err != nil {
 			return 0, err
 		}
 		built++
@@ -87,8 +106,29 @@ func (s *Site) Export(ctx context.Context, st dcms.HookStore, outDir string) (in
 	if err := s.copyAssets(outDir); err != nil {
 		return 0, err
 	}
+	if err := copyEmbedDir(wuiFS, "wui", filepath.Join(outDir, "wui")); err != nil {
+		return 0, err
+	}
+	// Derived content index — a self-contained fallback search that works on any CDN
+	// even without the Pagefind binary. Pagefind (below) is preferred when present.
+	if err := writeSearchIndex(ctx, st, outDir); err != nil {
+		return 0, err
+	}
 	runPagefind(outDir)
 	return built, nil
+}
+
+// writeSearchIndex renders the derived content index to outDir/search-index.json.
+func writeSearchIndex(ctx context.Context, st dcms.HookStore, outDir string) error {
+	docs, err := buildSearchDocs(ctx, st)
+	if err != nil {
+		return err
+	}
+	data, err := json.Marshal(docs)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(outDir, "search-index.json"), data, 0o644)
 }
 
 func (s *Site) writeFile(dst, tmpl string, data pageView) error {
@@ -124,6 +164,28 @@ func (s *Site) copyAssets(outDir string) error {
 			return err
 		}
 		return os.WriteFile(dst, data, 0o644)
+	})
+}
+
+// copyEmbedDir writes an embedded directory tree to dst (used for the wui library).
+func copyEmbedDir(efs embed.FS, root, dst string) error {
+	return fs.WalkDir(efs, root, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, _ := filepath.Rel(root, p)
+		out := filepath.Join(dst, rel)
+		if d.IsDir() {
+			return os.MkdirAll(out, 0o755)
+		}
+		data, err := efs.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
+			return err
+		}
+		return os.WriteFile(out, data, 0o644)
 	})
 }
 

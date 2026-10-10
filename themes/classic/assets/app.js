@@ -91,6 +91,45 @@
     return import("/pagefind/pagefind.js").then(function (m) { pf = m; return pf; }).catch(function () { pf = null; return null; });
   }
 
+  // Derived content index (search-index.json). Loaded once, on first miss of
+  // Pagefind. Static export writes it next to the pages; the live server serves it
+  // at /__search-index.json. Null once if neither is reachable.
+  var idx = null, idxTried = false;
+  function ensureIndex() {
+    if (idxTried) return Promise.resolve(idx);
+    idxTried = true;
+    return fetch("/search-index.json").then(function (r) {
+      return r.ok ? r : fetch("/__search-index.json");
+    }).then(function (r) {
+      if (!r.ok) throw 0;
+      return r.json();
+    }).then(function (d) { idx = d; return idx; }).catch(function () { idx = null; return null; });
+  }
+
+  // Rank index docs by a query: title/heading hits weigh more than body hits.
+  function indexSearch(q) {
+    if (!idx) return [];
+    var ql = q.toLowerCase();
+    var hits = [];
+    idx.forEach(function (d) {
+      var titleHit = d.title.toLowerCase().indexOf(ql) !== -1;
+      var sec = (d.outline || []).filter(function (h) { return h.text.toLowerCase().indexOf(ql) !== -1; })[0];
+      var at = d.text.toLowerCase().indexOf(ql);
+      if (!titleHit && !sec && at === -1) return;
+      var score = titleHit ? 3 : sec ? 2 : 1;
+      var url = sec ? d.url + "#" + sec.id : d.url;
+      var excerpt = sec ? sec.text : at !== -1 ? snippet(d.text, at, ql.length) : "";
+      hits.push({ score: score, title: d.title, url: url, excerpt: excerpt });
+    });
+    return hits.sort(function (a, b) { return b.score - a.score; }).slice(0, 8);
+  }
+
+  // A ~140-char window around a match, ellipsized.
+  function snippet(text, at, len) {
+    var start = Math.max(0, at - 60), end = Math.min(text.length, at + len + 80);
+    return (start ? "… " : "") + text.slice(start, end).trim() + (end < text.length ? " …" : "");
+  }
+
   function render(items) {
     sel = -1;
     if (!items.length) {
@@ -115,14 +154,20 @@
     var q = input.value.trim();
     if (!q) { render([]); return; }
     ensurePagefind().then(function (engine) {
-      if (!engine) { render(navFallback(q)); return; }
-      engine.search(q).then(function (s) {
-        return Promise.all(s.results.slice(0, 8).map(function (r) {
-          return r.data().then(function (d) {
-            return { title: (d.meta && d.meta.title) || d.url, url: d.url, excerpt: d.excerpt };
-          });
-        }));
-      }).then(render).catch(function () { render(navFallback(q)); });
+      if (engine) {
+        engine.search(q).then(function (s) {
+          return Promise.all(s.results.slice(0, 8).map(function (r) {
+            return r.data().then(function (d) {
+              return { title: (d.meta && d.meta.title) || d.url, url: d.url, excerpt: d.excerpt };
+            });
+          }));
+        }).then(render).catch(function () { render(navFallback(q)); });
+        return;
+      }
+      // No Pagefind: search the derived content index; nav titles as last resort.
+      ensureIndex().then(function (data) {
+        render(data ? indexSearch(q) : navFallback(q));
+      });
     });
   }
   if (input) input.addEventListener("input", function () { clearTimeout(debounce); debounce = setTimeout(doSearch, 120); });

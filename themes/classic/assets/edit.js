@@ -8,6 +8,9 @@
   var id = bar.getAttribute("data-edit-id");
   var editor = document.getElementById("doc-editor");
   var titleEl = document.getElementById("edit-title");
+  var descEl = document.getElementById("edit-description");
+  var authorEl = document.getElementById("edit-author");
+  var badgesEl = document.getElementById("edit-badges");
   var badge = document.getElementById("status-badge");
   var toastEl = document.getElementById("toast");
   var published = bar.getAttribute("data-published") === "true";
@@ -34,8 +37,18 @@
     });
   }
 
+  // The engine's docs-clean serialize when it's mounted; raw innerHTML otherwise
+  // (e.g. the editor script failed to load) so saving still works.
+  function bodyHTML() {
+    return typeof window.serializeDocBody === "function" ? window.serializeDocBody() : editor.innerHTML;
+  }
+
   function save() {
-    return api("PATCH", "/api/v1/pages/" + id, { title: titleEl.value, body: editor.innerHTML })
+    var data = { title: titleEl.value, body: bodyHTML() };
+    if (descEl) data.description = descEl.value;
+    if (authorEl) data.author = authorEl.value;
+    if (badgesEl) data.badges = badgesEl.value;
+    return api("PATCH", "/api/v1/pages/" + id, data)
       .then(function () { toast("Saved"); })
       .catch(function (e) { toast("Save failed: " + e.message, false); throw e; });
   }

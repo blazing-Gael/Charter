@@ -1,0 +1,117 @@
+/* Editing chrome for the classic theme — the formatting toolbar around #doc-editor.
+   Separate from styles.css so a theme can restyle the editor without touching the
+   reading styles. Uses the same tokens. */
+
+.compose-editor-wrap { position: relative; }
+
+.rte-toolbar {
+  position: sticky; top: var(--topbar-h); z-index: 20;
+  display: flex; align-items: center; gap: 2px; flex-wrap: wrap;
+  margin: 0 0 20px; padding: 6px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: saturate(1.2) blur(8px);
+  border: 1px solid var(--line); border-radius: var(--r);
+}
+.rte-btn {
+  display: grid; place-items: center; width: 32px; height: 32px; flex: none;
+  color: var(--fg-muted); background: transparent; border: 1px solid transparent;
+  border-radius: var(--r-sm); cursor: pointer; font-size: 17px;
+  transition: all var(--dur) var(--ease);
+}
+.rte-btn:hover { color: var(--fg); background: var(--hover); }
+.rte-btn.is-active, .rte-btn.active { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.rte-sep { width: 1px; align-self: stretch; margin: 4px 5px; background: var(--line); }
+
+/* While editing, the engine decorates lines with inline styles; the reading
+   .doc__body rules still apply, so the content looks the same as published. The
+   caret placeholder on an empty doc: */
+#doc-editor:focus { outline: none; }
+
+/* ── sidebar drag-and-drop (edit mode) ─────────────────────────────────── */
+.sidebar [data-nav-item].dnd-dragging { opacity: .4; }
+/* reorder: a line above/below the hovered item */
+.sidebar [data-nav-item].dnd-before { box-shadow: inset 0 2px 0 var(--accent); }
+.sidebar [data-nav-item].dnd-after { box-shadow: inset 0 -2px 0 var(--accent); }
+/* nest: outline the item that will become the parent */
+.sidebar [data-nav-item].dnd-inside { background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: inset 0 0 0 1px var(--accent); border-radius: var(--r-sm); }
+
+/* ── editor comments panel (edit mode, right column) ───────────────────── */
+.comments .toc__title { display: flex; align-items: center; gap: 8px; }
+.comments__count { color: var(--fg-faint); font-weight: 400; }
+.comments__toggle { margin-left: auto; display: grid; place-items: center; width: 22px; height: 22px; color: var(--fg-faint); background: none; border: none; border-radius: var(--r-sm); cursor: pointer; }
+.comments__toggle:hover { color: var(--fg); background: var(--hover); }
+.comments__toggle .ph { transition: transform var(--dur) var(--ease); }
+.comments.is-collapsed .comments__toggle .ph { transform: rotate(180deg); }
+.comments.is-collapsed .comments__list, .comments.is-collapsed .comments__empty { display: none; }
+.comments__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.comments__empty { color: var(--fg-faint); font-size: 13px; }
+.comment { padding: 11px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-raised); font-size: 13px; }
+.comment.is-hidden { opacity: .5; }
+.comment__head { display: flex; align-items: center; gap: 8px; }
+.comment__rating { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; flex: none; }
+.comment__rating--good { color: var(--wui-tone-success); background: color-mix(in srgb, var(--wui-tone-success) 15%, transparent); }
+.comment__rating--bad { color: var(--wui-tone-danger); background: color-mix(in srgb, var(--wui-tone-danger) 15%, transparent); }
+.comment__date { color: var(--fg-faint); font-size: 12px; }
+.comment__actions { margin-left: auto; display: flex; gap: 2px; }
+.comment__act { display: grid; place-items: center; width: 24px; height: 24px; color: var(--fg-faint); background: none; border: none; border-radius: var(--r-sm); cursor: pointer; }
+.comment__act:hover { color: var(--fg); background: var(--hover); }
+.comment__text { margin: 8px 0 0; color: var(--fg); line-height: 1.5; word-break: break-word; }
+.comment__email { display: block; margin-top: 6px; color: var(--fg-muted); font-size: 12px; }
+
+/* ── slash menu ────────────────────────────────────────────────────────── */
+.rte-slash {
+  position: fixed; z-index: 60; width: 232px; max-height: 300px; overflow-y: auto;
+  background: var(--bg-raised); border: 1px solid var(--line-strong);
+  border-radius: var(--r); box-shadow: var(--shadow); padding: 6px;
+}
+.rte-slash[hidden] { display: none; }
+.rte-slash__list { list-style: none; margin: 0; padding: 0; }
+.rte-slash__item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  border-radius: var(--r-sm); color: var(--fg-muted); font-size: 13.5px; cursor: pointer;
+}
+.rte-slash__item .ph { font-size: 17px; color: var(--fg-faint); flex: none; }
+.rte-slash__item.is-sel, .rte-slash__item:hover { background: var(--hover); color: var(--fg); }
+.rte-slash__item.is-sel .ph, .rte-slash__item:hover .ph { color: var(--fg); }
+
+/* ── selection bubble ──────────────────────────────────────────────────── */
+.rte-bubble {
+  position: fixed; z-index: 55;
+  background: var(--bg-raised); border: 1px solid var(--line-strong);
+  border-radius: var(--r); box-shadow: var(--shadow); padding: 4px;
+  animation: rte-pop var(--dur) var(--ease);
+}
+.rte-bubble[hidden], .rte-bubble [hidden] { display: none; }
+@keyframes rte-pop { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+.rte-bubble__row { display: flex; align-items: center; gap: 2px; }
+.rte-bubble__pop { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 4px 4px; max-width: 220px; }
+.rte-sw {
+  width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--line-strong); padding: 0; background: var(--bg);
+  transition: transform var(--dur) var(--ease);
+}
+.rte-sw:hover { transform: scale(1.15); }
+.rte-sw--clear { position: relative; background: var(--bg); }
+.rte-sw--clear::after {
+  content: ""; position: absolute; inset: 3px 0; left: 50%; width: 1.5px;
+  background: var(--fg-faint); transform: rotate(45deg); transform-origin: center;
+}
+
+/* ── link dialog ───────────────────────────────────────────────────────── */
+.rte-link {
+  position: fixed; z-index: 60; width: 320px; padding: 12px;
+  background: var(--bg-raised); border: 1px solid var(--line-strong);
+  border-radius: var(--r); box-shadow: var(--shadow);
+  display: grid; gap: 8px;
+}
+.rte-link[hidden] { display: none; }
+.rte-link [hidden] { display: none; }   /* .btn's display would otherwise override the attribute */
+.rte-link input {
+  width: 100%; padding: 8px 10px; font: inherit; font-size: 13px;
+  color: var(--fg); background: var(--bg-sunk);
+  border: 1px solid var(--line); border-radius: var(--r-sm); outline: none;
+}
+.rte-link input:focus { border-color: var(--accent); }
+.rte-link__row { display: flex; gap: 8px; justify-content: flex-end; }
+.rte-link__row .btn { padding: 7px 12px; font-size: 13px; }
+.rte-link__row .rte-link__remove { margin-right: auto; }

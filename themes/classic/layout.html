@@ -11,6 +11,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
   <link rel="stylesheet" href="/assets/styles.css">
+  <!-- wui component library: shared top-layer placer + tooltips (data-tip). Loaded
+       here so tooltips work on every page; float.js must precede tooltip.js, and
+       both precede the deferred editor chrome that uses wui.float. -->
+  <link rel="stylesheet" href="/wui/tooltip.css">
+  <script src="/wui/float.js" defer></script>
+  <script src="/wui/tooltip.js" defer></script>
 </head>{{end}}
 
 {{define "sidebar"}}
@@ -20,6 +26,7 @@
         <input id="sidebar-filter" type="text" placeholder="Filter sidebar" autocomplete="off" spellcheck="false" aria-label="Filter sidebar">
         <kbd class="kbd kbd--slash">/</kbd>
       </div>
+      <button class="sidebar__new" type="button" data-new-page><i class="ph ph-plus"></i> New page</button>
       <nav class="nav" aria-label="Documentation">
         {{range .Nav}}{{template "navnode" .}}{{end}}
       </nav>
@@ -31,7 +38,7 @@
 <body>
   <header class="topbar">
     <div class="topbar__group">
-      <button class="icon-btn" data-sidebar-toggle aria-label="Toggle sidebar"><i class="ph ph-list"></i></button>
+      <button class="icon-btn" data-sidebar-toggle aria-label="Toggle sidebar" data-tip="Toggle sidebar" data-tip-pos="bottom"><i class="ph ph-list"></i></button>
       <a class="brand" href="/">
         <span class="brand__mark">▚</span>
         <span class="brand__name">{{.SiteName}}</span>
@@ -45,8 +52,8 @@
         <kbd class="kbd"><span class="kbd__cmd">Ctrl</span> K</kbd>
       </button>
       {{if and .CanEdit .EditSlug}}<a class="btn btn--sm" href="/__edit/{{.EditSlug}}"><i class="ph ph-pencil-simple"></i> Edit</a>{{end}}
-      <a class="icon-btn" href="https://github.com/blazing-Gael/dcms" target="_blank" rel="noopener" aria-label="GitHub"><i class="ph ph-github-logo"></i></a>
-      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle theme">
+      <a class="icon-btn" href="https://github.com/blazing-Gael/dcms" target="_blank" rel="noopener" aria-label="GitHub" data-tip="GitHub" data-tip-pos="bottom"><i class="ph ph-github-logo"></i></a>
+      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle theme" data-tip="Toggle theme" data-tip-pos="bottom">
         <i class="ph ph-moon icon-dark"></i><i class="ph ph-sun icon-light"></i>
       </button>
     </div>
@@ -74,6 +81,8 @@
   </dialog>
 
   <script src="/assets/app.js" defer></script>
+  <script src="/assets/feedback.js" defer></script>
+  <script src="/assets/page-actions.js" defer></script>
 </body>
 </html>{{end}}
 
@@ -82,25 +91,29 @@
      page + children   → a dropdown; also a link when HasPage (split click: the
                          label navigates, the chevron toggles)
      page, no children → a plain link */}}
+{{/* The drag handle. Always rendered; CSS shows it only in edit mode. The edit
+     script makes it (not the item) the drag source, so clicking the item navigates. */}}
+{{define "navhandle"}}<span class="nav-handle" data-drag-handle aria-hidden="true"><i class="ph ph-dots-six-vertical"></i></span>{{end}}
+
 {{define "navnode"}}
 {{- if eq .Kind "label"}}
   <div class="nav-group">
-    <div class="nav-label">{{.Title}}</div>
-    {{if .Children}}<div class="nav-children nav-children--flush">{{range .Children}}{{template "navnode" .}}{{end}}</div>{{end}}
+    <div class="nav-label" data-nav-item data-id="{{.ID}}">{{template "navhandle"}}{{.Title}}</div>
+    {{if .Children}}<div class="nav-children nav-children--flush" data-children>{{range .Children}}{{template "navnode" .}}{{end}}</div>{{end}}
   </div>
 {{- else if .Children}}
   <div class="nav-node" data-collapsible data-key="{{.Kind}}:{{.Slug}}:{{.Title}}">
     <div class="nav-node__row">
       {{if .HasPage}}
-      <a class="nav-link nav-node__label{{if .Current}} is-current{{end}}" href="/p/{{.Slug}}">{{.Title}}</a>
+      <a class="nav-link nav-node__label{{if .Current}} is-current{{end}}" data-nav-item data-id="{{.ID}}" href="/p/{{.Slug}}">{{template "navhandle"}}{{.Title}}</a>
       {{else}}
-      <button class="nav-link nav-node__label nav-node__label--btn" type="button" data-toggle>{{.Title}}</button>
+      <button class="nav-link nav-node__label nav-node__label--btn" type="button" data-nav-item data-id="{{.ID}}" data-toggle>{{template "navhandle"}}{{.Title}}</button>
       {{end}}
       <button class="nav-node__chev" type="button" data-toggle aria-label="Toggle section"><i class="ph ph-caret-down"></i></button>
     </div>
-    <div class="nav-node__body"><div class="nav-children">{{range .Children}}{{template "navnode" .}}{{end}}</div></div>
+    <div class="nav-node__body"><div class="nav-children" data-children>{{range .Children}}{{template "navnode" .}}{{end}}</div></div>
   </div>
 {{- else}}
-  <a class="nav-link{{if .Current}} is-current{{end}}" href="/p/{{.Slug}}">{{.Title}}</a>
+  <a class="nav-link{{if .Current}} is-current{{end}}" data-nav-item data-id="{{.ID}}" href="/p/{{.Slug}}">{{template "navhandle"}}{{.Title}}</a>
 {{- end}}
 {{end}}

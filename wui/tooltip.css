@@ -1,0 +1,65 @@
+/* wui tooltip — a text tooltip (.wui-tip) and a hover/click popover (.wui-pop),
+   both rendered in the TOP LAYER via the Popover API: never clipped by an
+   overflow:hidden ancestor, and no z-index to manage. tooltip.js positions them
+   (with edge-flip + shift) because CSS anchor positioning isn't cross-browser yet.
+
+   THEMING chain: --wui-tip-X → --wui-X → --c-X (host) → default. */
+
+.wui-tip, .wui-pop {
+  --_bg:     var(--wui-tip-bg,     var(--c-tooltip-bg, #141414));
+  --_fg:     var(--wui-tip-fg,     var(--c-tooltip-fg, #F3F4F6));
+  --_border: var(--wui-tip-border, var(--wui-border,   var(--c-border, rgba(255,255,255,.10))));
+  --_radius: var(--wui-tip-radius, var(--wui-radius,   var(--r-md,     8px)));
+  --_shadow: var(--wui-tip-shadow, var(--shadow-lg,    0 4px 16px rgba(0,0,0,.35)));
+  --_font:   var(--wui-font,       var(--font,         inherit));
+  --_t:      var(--wui-t,          var(--t-fast,       .13s));
+  --_ease:   var(--wui-ease,       var(--ease,         ease));
+  --tip-arrow: 50%;                                   /* JS points it at the anchor's centre */
+  position: fixed; inset: auto; margin: 0;            /* JS sets left/top; override UA popover centring */
+  overflow: visible;                                  /* UA gives [popover] overflow:auto → the arrow (offset -5px) would trip a scrollbar */
+  max-width: min(280px, calc(100vw - 16px));
+  border: 1px solid var(--_border); border-radius: var(--_radius);
+  box-shadow: var(--_shadow);
+  font-weight: 500; font-size: 12px; line-height: 1.45; font-family: var(--_font);   /* longhands: a `font` shorthand with var(--_font) → inherit is dropped whole */
+  opacity: 0; transform: scale(.96);
+  transition: opacity var(--_t) var(--_ease), transform var(--_t) var(--_ease),
+              overlay var(--_t) allow-discrete, display var(--_t) allow-discrete;
+}
+.wui-tip, .wui-tip *, .wui-pop, .wui-pop * { box-sizing: border-box; }
+
+.wui-tip { background: var(--_bg); color: var(--_fg); padding: 6px 10px; pointer-events: none; }  /* a tooltip never eats hover */
+
+/* popover: an interactive surface — page colours, receives pointer/focus */
+.wui-pop {
+  --_bg: var(--wui-pop-bg, var(--wui-surface, var(--c-surface,   #FFFFFF)));
+  --_fg: var(--wui-pop-fg, var(--wui-text,    var(--c-text-main, #202124)));
+  background: var(--_bg); color: var(--_fg); padding: 12px 14px; font-weight: 400;
+}
+
+/* enter/exit (Popover API toggles display; @starting-style + allow-discrete animate it) */
+.wui-tip:popover-open, .wui-pop:popover-open,
+.wui-tip.wui-open, .wui-pop.wui-open { opacity: 1; transform: none; }   /* .wui-open = no-Popover-API fallback */
+@starting-style {
+  .wui-tip:popover-open, .wui-pop:popover-open { opacity: 0; transform: scale(.96); }
+}
+
+/* arrow — a rotated square showing the two outward edges, tracked to the anchor via --tip-arrow */
+.wui-tip::after, .wui-pop::after {
+  content: ""; position: absolute; width: 9px; height: 9px;
+  background: var(--_bg); border: 1px solid var(--_border); transform: rotate(45deg);
+}
+.wui-tip[data-side="top"]::after,    .wui-pop[data-side="top"]::after    { bottom: -5px; left: var(--tip-arrow); margin-left: -5px; border-top: 0; border-left: 0; }
+.wui-tip[data-side="bottom"]::after, .wui-pop[data-side="bottom"]::after { top: -5px;    left: var(--tip-arrow); margin-left: -5px; border-bottom: 0; border-right: 0; }
+.wui-tip[data-side="left"]::after,   .wui-pop[data-side="left"]::after   { right: -5px;  top: var(--tip-arrow);  margin-top: -5px;  border-bottom: 0; border-left: 0; }
+.wui-tip[data-side="right"]::after,  .wui-pop[data-side="right"]::after  { left: -5px;   top: var(--tip-arrow);  margin-top: -5px;  border-top: 0; border-right: 0; }
+
+/* semantic tones (tooltip) */
+.wui-tip[data-tip-tone="danger"]  { --_bg: #B3261E; --_fg: #FFFFFF; --_border: rgba(255,255,255,.14); }
+.wui-tip[data-tip-tone="success"] { --_bg: #1E7B34; --_fg: #FFFFFF; --_border: rgba(255,255,255,.14); }
+.wui-tip[data-tip-tone="warn"]    { --_bg: #8A5A00; --_fg: #FFFFFF; --_border: rgba(255,255,255,.14); }
+.wui-tip[data-tip-tone="info"]    { --_bg: #0B57D0; --_fg: #FFFFFF; --_border: rgba(255,255,255,.14); }
+
+@media (prefers-reduced-motion: reduce) {
+  .wui-tip, .wui-pop { transition: none; transform: none; }
+  @starting-style { .wui-tip:popover-open, .wui-pop:popover-open { opacity: 0; } }
+}

@@ -38,6 +38,45 @@
   --topbar-h:   56px;
   --sidebar-w:  288px;
   --content-max:780px;
+  --toc-w:      240px;
+
+  /* — wui bridge — map the component library's tokens onto classic's. These
+     reference classic vars, so they follow dark mode with no redefinition. Any
+     wui component dropped in (select, tooltip, the content components) inherits
+     the theme; override a single --wui-* to retune just that surface. */
+  --wui-accent:  var(--accent);
+  --wui-bg:      var(--bg);
+  --wui-surface: var(--bg-raised);
+  --wui-border:  var(--line-strong);
+  --wui-hair:    var(--line);
+  --wui-text:    var(--fg);
+  --wui-muted:   var(--fg-muted);
+  --wui-hover:   var(--hover);
+  /* tooltip: a high-contrast chip that flips with the theme (ink on paper ↔ paper on ink) */
+  --wui-tip-bg:     var(--accent);
+  --wui-tip-fg:     var(--accent-ink);
+  --wui-tip-shadow: var(--shadow);
+  --wui-radius:     var(--r);
+  --wui-ease:       var(--ease);
+  /* callout icons — outline SVGs used as CSS masks, so they take the tone color
+     and adapt to dark mode. Alpha-masked (stroke = opaque), fill:none = outline. */
+  --ic-info:    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cline x1='12' y1='11' x2='12' y2='16'/%3E%3Ccircle cx='12' cy='7.5' r='.1'/%3E%3C/svg%3E");
+  --ic-success: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8.3 12.3l2.6 2.6 4.8-5.4'/%3E%3C/svg%3E");
+  --ic-warn:    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.5 21 19.5 3 19.5Z'/%3E%3Cline x1='12' y1='10' x2='12' y2='14.5'/%3E%3Ccircle cx='12' cy='17' r='.1'/%3E%3C/svg%3E");
+  --ic-danger:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cline x1='9' y1='9' x2='15' y2='15'/%3E%3Cline x1='15' y1='9' x2='9' y2='15'/%3E%3C/svg%3E");
+  /* content-component tones (callout, etc.) */
+  --wui-tone-info:    #2563eb;
+  --wui-tone-success: #0a7d4b;
+  --wui-tone-warn:    #b45309;
+  --wui-tone-danger:  #b42318;
+}
+:root[data-theme="dark"] {
+  --wui-tone-info:#5b9cff; --wui-tone-success:#34d399; --wui-tone-warn:#fbbf24; --wui-tone-danger:#f87171;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --wui-tone-info:#5b9cff; --wui-tone-success:#34d399; --wui-tone-warn:#fbbf24; --wui-tone-danger:#f87171;
+  }
 }
 
 :root[data-theme="dark"] {
@@ -119,10 +158,26 @@ i.ph { display: inline-flex; line-height: 0; }
 .topbar--edit { border-bottom: 2px solid var(--accent); }
 .edit-title {
   width: 100%; border: none; background: none; color: var(--fg); font-family: inherit;
-  font-size: 36px; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; margin: 0 0 24px;
+  font-size: 36px; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; margin: 0 0 12px;
   padding: 0; outline: none;
 }
 .edit-title::placeholder { color: var(--fg-faint); }
+/* edit-mode header fields: subtitle + author/badges, matching the reading header */
+.edit-subtitle {
+  width: 100%; border: none; background: none; color: var(--fg-muted); font-family: inherit;
+  font-size: 17px; line-height: 1.5; margin: 0 0 14px; padding: 0; outline: none;
+}
+.edit-subtitle::placeholder { color: var(--fg-faint); }
+.edit-meta { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 20px; }
+.edit-meta__field {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
+  color: var(--fg-muted); background: var(--bg-sunk); border: 1px solid var(--line);
+  border-radius: 999px; font-size: 13px;
+}
+.edit-meta__field .ph { font-size: 15px; color: var(--fg-faint); }
+.edit-meta__field input { border: none; background: none; color: var(--fg); font: inherit; font-size: 13px; outline: none; width: 15ch; }
+.edit-meta__field input::placeholder { color: var(--fg-faint); }
+.edit-meta__field:focus-within { border-color: var(--accent); }
 #doc-editor { outline: none; min-height: 55vh; }
 #doc-editor:empty::before { content: attr(data-placeholder); color: var(--fg-faint); }
 
@@ -184,6 +239,33 @@ body.sidebar-collapsed .sidebar { transform: translateX(-100%); }
 }
 .sidebar__filter:focus-within { border-color: var(--accent); }
 .sidebar__filter input { flex: 1; border: none; background: none; color: var(--fg); font: inherit; font-size: 13px; outline: none; min-width: 0; }
+
+/* New-page button + drag handles: in the shared sidebar markup but edit-mode only
+   (body.is-editing is set on /__edit pages). Hidden by default so reading pages are
+   untouched. */
+.sidebar__new { display: none; }
+body.is-editing .sidebar__new {
+  display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 14px;
+  padding: 8px 10px; font: inherit; font-size: 13px; font-weight: 600; color: var(--fg-muted);
+  background: var(--bg); border: 1px dashed var(--line-strong); border-radius: var(--r);
+  cursor: pointer; transition: all var(--dur) var(--ease);
+}
+body.is-editing .sidebar__new:hover { color: var(--fg); border-color: var(--accent); border-style: solid; }
+.sidebar__new-input {
+  width: 100%; margin-bottom: 14px; padding: 8px 10px; font: inherit; font-size: 13px;
+  color: var(--fg); background: var(--bg); border: 1px solid var(--accent); border-radius: var(--r); outline: none;
+}
+.sidebar__new-input::placeholder { color: var(--fg-faint); }
+
+.sidebar [data-nav-item] { position: relative; }
+.nav-handle {
+  display: none; position: absolute; left: 1px; top: 7px; width: 17px; height: 20px;
+  place-items: center; color: var(--fg-faint); cursor: grab;
+}
+.nav-handle .ph { font-size: 14px; }
+.nav-handle:active { cursor: grabbing; }
+body.is-editing .nav-handle { display: inline-grid; }
+body.is-editing .sidebar [data-nav-item] { padding-left: 22px; }
 .sidebar__filter input::placeholder { color: var(--fg-faint); }
 
 /* nav tree ----------------------------------------------------------------
@@ -237,18 +319,98 @@ body.sidebar-collapsed .sidebar { transform: translateX(-100%); }
 }
 
 /* ── content ──────────────────────────────────────────────────────────── */
-.content { min-width: 0; padding: 40px 40px 120px; }
-.doc, .home { max-width: var(--content-max); margin: 0 auto; }
+.content { min-width: 0; padding: 48px 40px 120px; }
+.home { max-width: var(--content-max); margin: 0 auto; }
+
+/* page = content + "On this page" rail, CENTERED AS A GROUP: the pair has equal
+   margins on both sides. Content caps at --content-max, the TOC is a fixed rail a
+   wide gap to its right. Collapses + hides TOC when narrow. */
+.doc-layout { display: grid; grid-template-columns: minmax(0, var(--content-max)) var(--toc-w); justify-content: center; gap: 72px; align-items: start; }
+.doc { min-width: 0; }
+
+.toc { align-self: start; }
+.toc__inner {
+  position: sticky; top: calc(var(--topbar-h) + 72px); padding-left: 8px;
+  max-height: calc(100vh - var(--topbar-h) - 88px);
+  /* y-only: overflow-y:auto alone computes overflow-x to auto too, which flashes a
+     horizontal scrollbar when the vertical one narrows the box during a reflow. */
+  overflow-x: hidden; overflow-y: auto;
+}
+.toc__title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--fg-muted); margin-bottom: 12px; }
+.toc__title .ph { font-size: 15px; }
+.toc__list { list-style: none; margin: 0; padding: 0; }
+.toc__link {
+  display: block; padding: 5px 0 5px 14px; font-size: 13px; line-height: 1.45;
+  color: var(--fg-faint); border-left: 2px solid var(--line);
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.toc__link:hover { color: var(--fg); }
+.toc__link.is-active { color: var(--fg); border-left-color: var(--accent); font-weight: 500; }
+.toc__link--h3 { padding-left: 28px; }
+.toc__link--h4 { padding-left: 42px; }
+
+@media (max-width: 1100px) {
+  .doc-layout { grid-template-columns: minmax(0, 1fr); }
+  .toc { display: none; }
+  .doc { grid-column: auto; max-width: var(--content-max); margin: 0 auto; }
+}
 
 .crumbs { display: flex; align-items: center; gap: 8px; color: var(--fg-faint); font-size: 12.5px; margin-bottom: 18px; }
 .crumbs a:hover { color: var(--fg); }
 .crumbs .ph { font-size: 12px; }
 
-.doc__title { font-size: 36px; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; margin: 0 0 28px; }
+.doc__title { font-size: 36px; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; margin: 0 0 14px; }
+
+/* ── page header: lead subtext · meta row · copy/AI actions · divider ──────── */
+.doc__lead { margin: 0 0 18px; font-size: 17px; line-height: 1.5; color: var(--fg-muted); max-width: 62ch; }
+.doc__header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 0 0 18px; }
+.doc__meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; color: var(--fg-faint); font-size: 13px; }
+.doc__by, .doc__meta-item { display: inline-flex; align-items: center; gap: 6px; }
+.doc__by .ph, .doc__meta-item .ph { font-size: 15px; }
+.doc__badge {
+  display: inline-flex; align-items: center; height: 20px; padding: 0 9px;
+  font-size: 11.5px; font-weight: 600; letter-spacing: .01em;
+  color: var(--accent-ink, #fff); background: var(--accent); border-radius: 999px;
+}
+.doc__actions { margin-left: auto; display: inline-flex; align-items: stretch; }
+.doc-action {
+  display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 11px;
+  color: var(--fg-muted); background: var(--bg); border: 1px solid var(--line-strong);
+  font: inherit; font-size: 13px; cursor: pointer; transition: all var(--dur) var(--ease);
+}
+.doc-action .ph { font-size: 15px; }
+.doc-action:hover { color: var(--fg); background: var(--hover); }
+.doc-action--main { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+.doc-action--caret { border-radius: 0 var(--r-sm) var(--r-sm) 0; border-left: none; padding: 0 7px; }
+.doc__rule { border: none; border-top: 1px solid var(--line); margin: 0 0 32px; }
+
+/* dropdown menu for the AI / Markdown actions (floated with wui.float) */
+.doc-menu {
+  position: fixed; z-index: 60; min-width: 196px; padding: 6px;
+  background: var(--bg-raised); border: 1px solid var(--line-strong);
+  border-radius: var(--r); box-shadow: var(--shadow);
+}
+.doc-menu[hidden] { display: none; }
+.doc-menu__item {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px;
+  color: var(--fg-muted); background: none; border: none; border-radius: var(--r-sm);
+  font: inherit; font-size: 13.5px; text-align: left; cursor: pointer;
+}
+.doc-menu__item .ph { font-size: 17px; color: var(--fg-faint); flex: none; }
+.doc-menu__item:hover { background: var(--hover); color: var(--fg); }
+.doc-menu__item:hover .ph { color: var(--fg); }
+.doc-menu__sep { height: 1px; margin: 5px 6px; background: var(--line); }
+
 .doc__body { font-size: 15.5px; }
 .doc__body > :first-child { margin-top: 0; }
-.doc__body h2 { font-size: 23px; font-weight: 700; letter-spacing: -.02em; margin: 44px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); scroll-margin-top: calc(var(--topbar-h) + 16px); }
-.doc__body h3 { font-size: 18px; font-weight: 700; margin: 30px 0 10px; scroll-margin-top: calc(var(--topbar-h) + 16px); }
+/* Heading scale. !important so this wins inside #doc-editor too, where the engine
+   bakes its own (smaller, email-scale) font-size/weight inline on each heading —
+   that's what makes the editor match the published page (WYSIWYG). Body headings
+   start at h2 (h1 is the page title field); h1 here only covers legacy body h1s. */
+.doc__body h1 { font-size: 28px !important; font-weight: 800 !important; letter-spacing: -.025em; margin: 40px 0 16px; }
+.doc__body h2 { font-size: 23px !important; font-weight: 700 !important; letter-spacing: -.02em; margin: 44px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); scroll-margin-top: calc(var(--topbar-h) + 16px); }
+.doc__body h3 { font-size: 18px !important; font-weight: 700 !important; margin: 30px 0 10px; scroll-margin-top: calc(var(--topbar-h) + 16px); }
+.doc__body h4 { font-size: 15.5px !important; font-weight: 700 !important; letter-spacing: 0; margin: 24px 0 8px; text-transform: uppercase; letter-spacing: .04em; color: var(--fg-muted); }
 .doc__body p, .doc__body ul, .doc__body ol { margin: 0 0 16px; }
 .doc__body li { margin: 4px 0; }
 .doc__body a { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
@@ -262,8 +424,126 @@ body.sidebar-collapsed .sidebar { transform: translateX(-100%); }
 .doc__body th { background: var(--bg-sunk); font-weight: 600; }
 .doc__body img { max-width: 100%; border: 1px solid var(--line); border-radius: var(--r); }
 .doc__body hr { border: none; border-top: 1px solid var(--line); margin: 32px 0; }
+/* feedback widget — "How is this guide?" The form reveals on Good/Bad (height +
+   opacity), and the whole block fades to a thank-you on submit. */
+.feedback { margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--line); transition: opacity var(--dur) var(--ease); }
+.feedback__ask { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.feedback__q { font-weight: 600; font-size: 14px; }
+.feedback__btns { display: flex; gap: 8px; }
+.feedback__btn {
+  display: inline-flex; align-items: center; gap: 7px; padding: 6px 15px; font: inherit; font-size: 13px; font-weight: 500;
+  color: var(--fg-muted); background: var(--bg-sunk); border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+.feedback__btn .ph { font-size: 15px; }
+.feedback__btn:hover { color: var(--fg); border-color: var(--line-strong); }
+.feedback__btn.is-on { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.feedback__form {
+  display: grid; gap: 10px; overflow: hidden; max-height: 0; opacity: 0; margin-top: 0;
+  transition: max-height var(--dur) var(--ease), opacity var(--dur) var(--ease), margin-top var(--dur) var(--ease);
+}
+.feedback.is-open .feedback__form { max-height: 280px; opacity: 1; margin-top: 16px; }
+.feedback__text, .feedback__email {
+  width: 100%; font: inherit; font-size: 14px; color: var(--fg); background: var(--bg-sunk);
+  border: 1px solid var(--line); border-radius: var(--r); padding: 11px 13px; outline: none; resize: vertical;
+}
+.feedback__text:focus, .feedback__email:focus { border-color: var(--accent); }
+.feedback__text::placeholder, .feedback__email::placeholder { color: var(--fg-faint); }
+.feedback__submit {
+  justify-self: start; padding: 9px 18px; font: inherit; font-size: 13px; font-weight: 600;
+  color: var(--accent-ink); background: var(--accent); border: 1px solid var(--accent); border-radius: var(--r);
+  cursor: pointer; transition: transform var(--dur) var(--ease); }
+.feedback__submit:hover { transform: translateY(-1px); }
+.feedback__submit:disabled { opacity: .6; cursor: default; transform: none; }
+.feedback.is-sent { opacity: 1; }
+.feedback__done { font-weight: 500; font-size: 14px; color: var(--fg-muted); }
+.doc__updated { margin-top: 20px; color: var(--fg-faint); font-size: 13px; }
+
+/* prev/next pager — stays in sync with the nav reading order (server-computed) */
+.pager { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 56px; }
+.pager__card {
+  display: flex; flex-direction: column; gap: 6px; padding: 16px 18px;
+  background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--r);
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.pager__card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.pager__card--next { text-align: right; }
+.pager__dir { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--fg-faint); }
+.pager__card--next .pager__dir { justify-content: flex-end; }
+.pager__title { font-size: 15px; font-weight: 700; color: var(--fg); }
+@media (max-width: 560px) { .pager { grid-template-columns: 1fr; } }
+
 .doc__foot { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--fg-faint); font-size: 13px; }
 .doc__foot a { text-decoration: underline; text-underline-offset: 2px; }
+
+/* ── content components (ELEMENT_CONTRACT Part B) ──────────────────────────
+   These style the DEGRADED, authored shape — valid and readable with no JS.
+   The wui JS later upgrades the same markup (tab bar, copy buttons, icons).
+   Scoped to rendered content AND the live editor region. Colors come from the
+   --wui-tone-* bridge tokens.                                               */
+:where(.doc__body, #doc-editor) {
+  /* Callout — aside[data-callout][data-callout-tone]. Subtle box, left tone bar,
+     and a tone-colored icon (a CSS mask, so it follows the tone + dark mode). */
+  aside[data-callout] {
+    --_tone: var(--fg-muted);
+    --_icon: var(--ic-info);
+    position: relative;
+    margin: 0 0 18px; padding: 14px 16px 14px 46px; border-radius: var(--r);
+    background: color-mix(in srgb, var(--_tone) 5%, var(--bg));
+    border: 1px solid color-mix(in srgb, var(--_tone) 20%, var(--line));
+    border-left: 3px solid var(--_tone);
+  }
+  aside[data-callout]::before {
+    content: ""; position: absolute; left: 16px; top: 15px; width: 18px; height: 18px;
+    background: var(--_tone);
+    -webkit-mask: var(--_icon) center / 18px no-repeat; mask: var(--_icon) center / 18px no-repeat;
+  }
+  aside[data-callout] > :first-child { margin-top: 0; }
+  aside[data-callout] > :last-child { margin-bottom: 0; }
+  aside[data-callout-tone="info"]    { --_tone: var(--wui-tone-info);    --_icon: var(--ic-info); }
+  aside[data-callout-tone="success"] { --_tone: var(--wui-tone-success); --_icon: var(--ic-success); }
+  aside[data-callout-tone="warn"]    { --_tone: var(--wui-tone-warn);    --_icon: var(--ic-warn); }
+  aside[data-callout-tone="danger"]  { --_tone: var(--wui-tone-danger);  --_icon: var(--ic-danger); }
+
+  /* Details — native disclosure, styled; caret rotates on open */
+  details { margin: 0 0 18px; padding: 0 16px; background: var(--bg-sunk); border: 1px solid var(--line); border-radius: var(--r); }
+  details[open] { padding-bottom: 4px; }
+  summary { list-style: none; cursor: pointer; padding: 12px 0; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "\203A"; color: var(--fg-faint); font-size: 1.1em; line-height: 1; transition: transform var(--dur) var(--ease); }
+  details[open] summary::before { transform: rotate(90deg); }
+
+  /* Tabs — degrades to stacked sections, each labelled by its tab name */
+  div[data-tabs] { margin: 0 0 18px; }
+  div[data-tabs] > section[data-tabs-tab] { margin: 0 0 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r); }
+  section[data-tabs-tab]::before { content: attr(data-tabs-tab); display: block; margin-bottom: 8px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--fg-faint); }
+  section[data-tabs-tab] > :last-child { margin-bottom: 0; }
+
+  /* Steps — numbered list with a connecting rail */
+  ol[data-steps] { list-style: none; counter-reset: step; margin: 0 0 18px; padding: 0; }
+  ol[data-steps] > li { counter-increment: step; position: relative; margin: 0; padding: 2px 0 22px 40px; }
+  ol[data-steps] > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 28px; height: 28px; display: grid; place-items: center; font: 700 13px/1 var(--font-mono); color: var(--accent-ink); background: var(--accent); border-radius: 50%; }
+  ol[data-steps] > li::after { content: ""; position: absolute; left: 13px; top: 30px; bottom: 2px; width: 2px; background: var(--line); }
+  ol[data-steps] > li:last-child { padding-bottom: 0; }
+  ol[data-steps] > li:last-child::after { display: none; }
+  ol[data-steps] > li > :last-child { margin-bottom: 0; }
+
+  /* Code group — stacked code blocks fused into one framed block */
+  div[data-code-group] { margin: 0 0 18px; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+  div[data-code-group] > pre { margin: 0; border: none; border-radius: 0; border-top: 1px solid var(--line); }
+  div[data-code-group] > pre:first-child { border-top: none; }
+
+  /* Cards — link grid (reuses the home card look) */
+  div[data-cards] { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; margin: 0 0 18px; }
+  div[data-cards] .xcard { display: block; padding: 16px; font-weight: 600; background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--r); transition: all var(--dur) var(--ease); }
+  div[data-cards] .xcard:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+  /* Timeline — dated rail (post-v1, cheap to ship) */
+  ol[data-timeline] { list-style: none; margin: 0 0 18px; padding: 2px 0 0 22px; border-left: 2px solid var(--line); }
+  ol[data-timeline] > li { position: relative; display: flex; flex-direction: column; margin: 0; padding: 0 0 18px 14px; }
+  ol[data-timeline] > li::before { content: ""; position: absolute; left: -29px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--bg); }
+  li[data-timeline-at]::after { content: attr(data-timeline-at); order: -1; margin-bottom: 2px; font-size: 12px; font-weight: 600; color: var(--fg-faint); }
+}
 
 /* ── home ─────────────────────────────────────────────────────────────── */
 .hero { padding: 24px 0 8px; }

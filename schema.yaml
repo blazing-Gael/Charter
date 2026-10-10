@@ -21,6 +21,10 @@ collections:
       visibility: { type: enum, values: [public, private], default: public }
       theme:      { type: string, default: "classic" }
       home_intro: { type: text }   # markdown shown on the site homepage
+      # How the page feedback widget treats email: none (don't ask), optional (ask,
+      # not required), required (must supply a valid address). `verified` (email a
+      # code to confirm) is a later step.
+      feedback_email: { type: enum, values: [none, optional, required], default: optional }
 
   # The whole documentation tree — one self-referential collection, not pages-inside-
   # sections. Every sidebar entry is a node; `parent` builds the tree and `order` sorts
@@ -44,6 +48,27 @@ collections:
       slug:   { type: string, unique: true }
       kind:   { type: enum, values: [page, label], default: page }
       body:   { type: text }                     # markdown; empty = dropdown/label
+      # Page-header extras (all optional, render only when set):
+      description: { type: text }                # subtext shown under the H1
+      author:      { type: string }              # byline shown in the header meta row
+      badges:      { type: string }              # comma-separated pills (e.g. "New, Beta")
       order:  { type: integer, default: 0 }
       parent: { type: relation, target: pages }  # self-reference → the nav tree
       site:   { type: relation, target: sites }
+
+  # Reader feedback on a page (the "How is this guide?" widget). Submitted by the
+  # public through the rate-limited POST /__feedback route (which uses the privileged
+  # store), so create here is admin-only — the raw API isn't a spam vector. Editors
+  # read/hide/delete; `hidden` soft-hides without deleting.
+  feedback:
+    access:
+      read:   [admin, editor]
+      create: [admin]
+      update: [admin, editor]
+      delete: [admin, editor]
+    fields:
+      page:    { type: relation, target: pages, required: true }
+      rating:  { type: enum, values: [good, bad], required: true }
+      comment: { type: text }
+      email:   { type: string }
+      hidden:  { type: boolean, default: false }

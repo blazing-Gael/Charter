@@ -116,7 +116,7 @@ body {
 }
 a { color: inherit; text-decoration: none; }
 ::selection { background: var(--accent); color: var(--accent-ink); }
-i.ph { display: inline-flex; line-height: 0; }
+i.ph { display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
 
 /* ── kbd ──────────────────────────────────────────────────────────────── */
 .kbd {
@@ -296,7 +296,9 @@ body.is-editing .sidebar [data-nav-item] { padding-left: 22px; }
 .nav-node__row { display: flex; align-items: center; gap: 2px; }
 .nav-node__label { flex: 1; min-width: 0; }
 .nav-node__chev {
-  flex: none; display: grid; place-items: center; width: 26px; height: 30px;
+  flex: none; display: grid; place-items: center; width: 26px;
+  align-self: stretch; margin: 1px 0;  /* same margin-box as the label (.nav-link margin:1px 0)
+                                          so, stretched, the hover boxes are the exact same height */
   background: none; border: none; cursor: pointer; color: var(--fg-faint);
   border-radius: var(--r-sm); font-size: 13px; transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
 }
@@ -328,7 +330,10 @@ body.is-editing .sidebar [data-nav-item] { padding-left: 22px; }
 .doc-layout { display: grid; grid-template-columns: minmax(0, var(--content-max)) var(--toc-w); justify-content: center; gap: 72px; align-items: start; }
 .doc { min-width: 0; }
 
-.toc { align-self: start; }
+/* Stretch to the full grid-row height (not just the TOC's own height) so the sticky
+   inner stays pinned all the way down a long page — align-self:start would let it
+   scroll away once you passed the list, hiding the on-screen-section highlight. */
+.toc { align-self: stretch; }
 .toc__inner {
   position: sticky; top: calc(var(--topbar-h) + 72px); padding-left: 8px;
   max-height: calc(100vh - var(--topbar-h) - 88px);
@@ -338,14 +343,33 @@ body.is-editing .sidebar [data-nav-item] { padding-left: 22px; }
 }
 .toc__title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--fg-muted); margin-bottom: 12px; }
 .toc__title .ph { font-size: 15px; }
+/* .toc__body anchors the gliding blanket; links sit above it (z-index). */
+.toc__body { position: relative; }
 .toc__list { list-style: none; margin: 0; padding: 0; }
 .toc__link {
-  display: block; padding: 5px 0 5px 14px; font-size: 13px; line-height: 1.45;
-  color: var(--fg-faint); border-left: 2px solid var(--line);
-  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  position: relative; z-index: 1;
+  display: block; padding: 5px 10px; font-size: 13px; line-height: 1.45;
+  color: var(--fg-faint);
+  transition: color var(--dur) var(--ease);
 }
 .toc__link:hover { color: var(--fg); }
-.toc__link.is-active { color: var(--fg); border-left-color: var(--accent); font-weight: 500; }
+/* Multi-highlight (data-spy-multi): every section in view gets .is-active; they're
+   contiguous, so the single .toc__glide below covers the whole run. Links only change
+   text colour — the band itself is the gliding element. */
+.toc__link.is-active { color: var(--fg); font-weight: 500; }
+
+/* The gliding blanket: one tinted block that toc.js slides (transform) and resizes
+   (height) to span the active links, so it glides between sections. */
+.toc__glide {
+  position: absolute; left: -2px; right: -2px; top: 0; height: 0; z-index: 0;
+  /* solid, subtle tint blended into the page bg (reads cleaner than a transparent
+     overlay behind text) with a hairline edge for a little definition. */
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 9%, transparent);
+  border-radius: 8px; opacity: 0; pointer-events: none;
+  transition: transform .24s var(--ease), height .24s var(--ease), opacity .18s var(--ease);
+}
+@media (prefers-reduced-motion: reduce) { .toc__glide { transition: opacity .18s linear; } }
 .toc__link--h3 { padding-left: 28px; }
 .toc__link--h4 { padding-left: 42px; }
 
@@ -367,39 +391,23 @@ body.is-editing .sidebar [data-nav-item] { padding-left: 22px; }
 .doc__meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; color: var(--fg-faint); font-size: 13px; }
 .doc__by, .doc__meta-item { display: inline-flex; align-items: center; gap: 6px; }
 .doc__by .ph, .doc__meta-item .ph { font-size: 15px; }
-.doc__badge {
-  display: inline-flex; align-items: center; height: 20px; padding: 0 9px;
-  font-size: 11.5px; font-weight: 600; letter-spacing: .01em;
-  color: var(--accent-ink, #fff); background: var(--accent); border-radius: 999px;
-}
-.doc__actions { margin-left: auto; display: inline-flex; align-items: stretch; }
-.doc-action {
-  display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 11px;
-  color: var(--fg-muted); background: var(--bg); border: 1px solid var(--line-strong);
-  font: inherit; font-size: 13px; cursor: pointer; transition: all var(--dur) var(--ease);
-}
-.doc-action .ph { font-size: 15px; }
-.doc-action:hover { color: var(--fg); background: var(--hover); }
-.doc-action--main { border-radius: var(--r-sm) 0 0 var(--r-sm); }
-.doc-action--caret { border-radius: 0 var(--r-sm) var(--r-sm) 0; border-left: none; padding: 0 7px; }
-.doc__rule { border: none; border-top: 1px solid var(--line); margin: 0 0 32px; }
 
-/* dropdown menu for the AI / Markdown actions (floated with wui.float) */
-.doc-menu {
-  position: fixed; z-index: 60; min-width: 196px; padding: 6px;
-  background: var(--bg-raised); border: 1px solid var(--line-strong);
-  border-radius: var(--r); box-shadow: var(--shadow);
+/* Split control (wui-group of wui.copy + the dropdown trigger). The copy button is
+   wui-copy--label; the caret is styled to match it so the group joins cleanly. */
+.doc__actions { margin-left: auto; }
+.doc-copy { font-size: 13px; }
+.doc-caret {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 32px; padding: 0 7px; box-sizing: border-box;
+  color: var(--fg-muted); background: var(--bg-raised);
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  font: inherit; cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
 }
-.doc-menu[hidden] { display: none; }
-.doc-menu__item {
-  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px;
-  color: var(--fg-muted); background: none; border: none; border-radius: var(--r-sm);
-  font: inherit; font-size: 13.5px; text-align: left; cursor: pointer;
-}
-.doc-menu__item .ph { font-size: 17px; color: var(--fg-faint); flex: none; }
-.doc-menu__item:hover { background: var(--hover); color: var(--fg); }
-.doc-menu__item:hover .ph { color: var(--fg); }
-.doc-menu__sep { height: 1px; margin: 5px 6px; background: var(--line); }
+.doc-caret .ph { font-size: 15px; }
+.doc-caret:hover, .doc-caret[aria-expanded="true"] { color: var(--fg); background: var(--hover); }
+
+.doc__rule { border: none; border-top: 1px solid var(--line); margin: 0 0 32px; }
 
 .doc__body { font-size: 15.5px; }
 .doc__body > :first-child { margin-top: 0; }
@@ -415,6 +423,8 @@ body.is-editing .sidebar [data-nav-item] { padding-left: 22px; }
 .doc__body li { margin: 4px 0; }
 .doc__body a { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
 .doc__body a:hover { text-decoration-color: var(--accent); }
+.doc__body a.wui-tab { text-decoration: none; }  /* tab chips are not content links */
+.doc__body a.xcard { text-decoration: none; }    /* cards are tiles, not content links */
 .doc__body code { font-family: var(--font-mono); font-size: .86em; background: var(--bg-sunk); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 1px 6px; }
 .doc__body pre { background: var(--bg-sunk); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; overflow-x: auto; margin: 0 0 18px; }
 .doc__body pre code { background: none; border: none; padding: 0; font-size: 13px; line-height: 1.6; }
@@ -457,7 +467,8 @@ body.is-editing .sidebar [data-nav-item] { padding-left: 22px; }
 .feedback__submit:disabled { opacity: .6; cursor: default; transform: none; }
 .feedback.is-sent { opacity: 1; }
 .feedback__done { font-weight: 500; font-size: 14px; color: var(--fg-muted); }
-.doc__updated { margin-top: 20px; color: var(--fg-faint); font-size: 13px; }
+.doc__updated { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 0; color: var(--fg-faint); font-size: 13px; }
+.doc__updated .ph { font-size: 15px; }
 
 /* prev/next pager — stays in sync with the nav reading order (server-computed) */
 .pager { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 56px; }
@@ -519,6 +530,19 @@ body.is-editing .sidebar [data-nav-item] { padding-left: 22px; }
   section[data-tabs-tab]::before { content: attr(data-tabs-tab); display: block; margin-bottom: 8px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--fg-faint); }
   section[data-tabs-tab] > :last-child { margin-bottom: 0; }
 
+  /* wui tabs — the real tab bar (wui/tabs.js enhances the stored anchor-link + section
+     markup). Without the script (e.g. in the editor) every panel stays visible. */
+  .wui-tabs { margin: 0 0 18px; }
+  .wui-tabs > .wui-tab-panel { padding-top: 14px; }
+  .wui-tabs > .wui-tab-panel > :first-child { margin-top: 0; }
+  .wui-tabs > .wui-tab-panel > :last-child { margin-bottom: 0; }
+
+  /* Code group: tabs fused onto one framed block, the code flush inside it */
+  .wui-tabs--code { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+  .wui-tabs--code > .wui-tab-list { padding: 0 8px; background: var(--bg-raised); box-shadow: inset 0 -1px var(--line); }
+  .wui-tabs--code > .wui-tab-panel { padding: 0; }
+  .wui-tabs--code > .wui-tab-panel > pre { margin: 0; border: none; border-radius: 0; }
+
   /* Steps — numbered list with a connecting rail */
   ol[data-steps] { list-style: none; counter-reset: step; margin: 0 0 18px; padding: 0; }
   ol[data-steps] > li { counter-increment: step; position: relative; margin: 0; padding: 2px 0 22px 40px; }
@@ -543,6 +567,9 @@ body.is-editing .sidebar [data-nav-item] { padding-left: 22px; }
   ol[data-timeline] > li { position: relative; display: flex; flex-direction: column; margin: 0; padding: 0 0 18px 14px; }
   ol[data-timeline] > li::before { content: ""; position: absolute; left: -29px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--bg); }
   li[data-timeline-at]::after { content: attr(data-timeline-at); order: -1; margin-bottom: 2px; font-size: 12px; font-weight: 600; color: var(--fg-faint); }
+  /* Editable date: a <time> survives the editor serialize (a class-only <span> doesn't). */
+  ol[data-timeline] > li > time { order: -1; display: block; margin-bottom: 2px; font-size: 12px; font-weight: 600; color: var(--fg-faint); }
+  ol[data-timeline] > li > p { margin: 0; }                 /* description line sits tight under the date */
 }
 
 /* ── home ─────────────────────────────────────────────────────────────── */

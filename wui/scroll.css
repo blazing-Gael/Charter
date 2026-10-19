@@ -1,0 +1,38 @@
+/* wui scroll — a thin, themed scrollbar for any scrolling box. CSS-only, no JS.
+
+     <div class="wui-scroll" style="overflow:auto">…</div>          this box
+     <aside class="wui-scroll wui-scroll--deep">…</aside>            this box and every scroller inside it
+     <div class="wui-scroll wui-scroll--none" style="overflow:auto">  scrolls, no bar (a strip, a chip row)
+
+   No arrow buttons. The thumb is faint, brighter while the pointer is over the box, and
+   brighter still on the thumb itself. Chrome / Edge / Safari draw it with the ::-webkit
+   parts; Firefox gets the standard scrollbar-width / -color (given only where ::-webkit
+   isn't supported, since Chrome would let them replace the webkit look and bring back
+   the Windows arrows).
+
+   THEMING chain: --wui-scroll-X → --wui-X → --c-X (host) → default.
+     --wui-scroll-size   10px (the gutter; the thumb is 4px narrower)
+     --wui-scroll-thumb  muted text at 45%      --wui-scroll-track   transparent */
+
+:where(.wui-scroll, .wui-scroll--deep *) {
+  --_thumb: var(--wui-scroll-thumb, color-mix(in srgb, var(--wui-muted, var(--c-text-faint, #8a8f98)) 45%, transparent));
+  --_track: var(--wui-scroll-track, transparent);
+  --_size:  var(--wui-scroll-size, 10px);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  :where(.wui-scroll, .wui-scroll--deep *) { scrollbar-width: thin; scrollbar-color: var(--_thumb) var(--_track); }
+  :where(.wui-scroll--none, .wui-scroll--none.wui-scroll--deep *) { scrollbar-width: none; }
+}
+
+:where(.wui-scroll, .wui-scroll--deep *)::-webkit-scrollbar { width: var(--_size); height: var(--_size); }
+:where(.wui-scroll, .wui-scroll--deep *)::-webkit-scrollbar-track,
+:where(.wui-scroll, .wui-scroll--deep *)::-webkit-scrollbar-corner { background: var(--_track); }
+:where(.wui-scroll, .wui-scroll--deep *)::-webkit-scrollbar-thumb {
+  border: 3px solid transparent; border-radius: 999px;
+  background: color-mix(in srgb, var(--_thumb) 55%, transparent) padding-box;
+}
+:where(.wui-scroll, .wui-scroll--deep *):hover::-webkit-scrollbar-thumb { background-color: var(--_thumb); }
+:where(.wui-scroll, .wui-scroll--deep *)::-webkit-scrollbar-thumb:hover { background-color: var(--wui-muted, var(--c-text-faint, #8a8f98)); }
+
+:where(.wui-scroll--none, .wui-scroll--none.wui-scroll--deep *)::-webkit-scrollbar { display: none; }

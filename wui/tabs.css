@@ -1,0 +1,98 @@
+/* wui tabs — the ARIA tabs pattern. Styles here; tabs.js adds the roles, the
+   keyboard, the sliding ink and the panel switch. Without JS it's a list of jump
+   links over every panel.
+
+     <div class="wui-tab-list" aria-label="Step">
+       <a class="wui-tab" href="#p-params">Parameters</a>
+       <a class="wui-tab" href="#p-settings" aria-current="true">Settings</a>
+     </div>
+     <section class="wui-tab-panel" id="p-params">…</section>
+     <section class="wui-tab-panel" id="p-settings">…</section>
+
+   The full ARIA markup (role="tab" buttons, panels pre-`hidden`) works too — see tabs.js
+   for when to use it.
+
+   Panels are found by id (href / aria-controls), so they can sit anywhere on the page.
+     .wui-tab-list--pill   a soft pill behind the selected tab instead of an underline
+
+   THEMING chain: --wui-tabs-X → --wui-X → --c-X (host) → default.
+     --wui-tabs-ink    underline / pill colour (→ --wui-accent / --wui-accent-soft)
+     --wui-tabs-line   the list's baseline     (→ --wui-hair)
+     --wui-tabs-speed  ink slide, .3s */
+
+.wui-tab-list {
+  --_ink:    var(--wui-tabs-ink,    var(--wui-accent,      var(--c-accent,      #0B57D0)));
+  --_line:   var(--wui-tabs-line,   var(--wui-hair,        var(--hair,          rgba(0,0,0,.12))));
+  --_text:   var(--wui-tabs-text,   var(--wui-text,        var(--c-text-main,   #202124)));
+  --_muted:  var(--wui-tabs-muted,  var(--wui-muted,       var(--c-text-muted,  #5F6368)));
+  --_hover:  var(--wui-tabs-hover,  var(--wui-hover,       var(--c-hover,       rgba(0,0,0,.05))));
+  --_ring:   var(--wui-tabs-ring,   var(--wui-accent,      var(--c-accent,      #0B57D0)));
+  --_radius: var(--wui-tabs-radius, var(--wui-radius-sm,   var(--r-sm,          8px)));
+  --_speed:  var(--wui-tabs-speed,  .3s);
+  --_ease:   var(--wui-ease-out,    cubic-bezier(.2, .8, .2, 1));
+  --_font:   var(--wui-font,        var(--font,            inherit));
+  --_px: 12px;                                         /* tab side padding; the underline sits inside it */
+  position: relative; display: flex; gap: 2px;
+  overflow-x: auto; scrollbar-width: none;             /* many tabs scroll sideways */
+  box-shadow: inset 0 -1px var(--_line);
+}
+.wui-tab-list::-webkit-scrollbar { display: none; }
+
+.wui-tab {
+  appearance: none; margin: 0; border: 0; background: none; text-decoration: none;   /* <a> tabs too */
+  position: relative; isolation: isolate; flex: none; display: inline-flex; align-items: center; gap: 6px;
+  height: 40px; padding: 0 var(--_px);
+  font-family: var(--_font); font-size: 13.5px; font-weight: 500; white-space: nowrap;
+  color: var(--_muted); cursor: pointer; transition: color var(--_speed);
+}
+.wui-tab > i { font-size: 16px; }
+.wui-tab::before {                                     /* hover wash */
+  content: ""; position: absolute; z-index: -1; inset: 6px 2px; border-radius: var(--_radius);
+  background: var(--_hover); opacity: 0; transition: opacity .15s;
+}
+.wui-tab:hover::before { opacity: 1; }
+.wui-tab:hover, .wui-tab[aria-selected="true"] { color: var(--_text); }
+.wui-tab:focus-visible { outline: 2px solid var(--_ring); outline-offset: -4px; border-radius: var(--_radius); }
+.wui-tab:disabled { opacity: .45; cursor: not-allowed; }
+.wui-tab:disabled::before { display: none; }
+
+/* the ink: before JS (or without it) the selected tab draws its own; tabs.js then
+   swaps in one shared ink on the list that slides between tabs */
+.wui-tab[aria-selected="true"]::after,
+.wui-tab-list[data-wui-ink]::after {
+  content: ""; position: absolute; bottom: 0; height: 2px; border-radius: 2px 2px 0 0;
+  background: var(--_ink); pointer-events: none;
+}
+.wui-tab[aria-selected="true"]::after { left: var(--_px); right: var(--_px); }
+.wui-tab-list[data-wui-ink] .wui-tab[aria-selected]::after { display: none; }
+.wui-tab-list[data-wui-ink]::after {
+  left: 0; width: calc(var(--wui-tab-w) - 2 * var(--_px)); translate: calc(var(--wui-tab-x) + var(--_px)) 0;
+  transition: translate var(--_speed) var(--_ease), width var(--_speed) var(--_ease);
+}
+
+/* pill: no baseline; a soft pill slides behind the selected tab */
+.wui-tab-list--pill {
+  --_ink: var(--wui-tabs-ink, var(--wui-accent-soft, var(--c-accent-soft, rgba(11,87,208,.1))));
+  gap: 4px; box-shadow: none;
+}
+.wui-tab-list--pill .wui-tab { z-index: 1; height: 36px; }
+.wui-tab-list--pill .wui-tab[aria-selected="true"] { color: var(--wui-accent, var(--c-accent, #0B57D0)); }
+.wui-tab-list--pill .wui-tab[aria-selected="true"]::before { opacity: 0; }
+.wui-tab-list--pill .wui-tab[aria-selected="true"]::after { inset: 4px 0; height: auto; z-index: -1; border-radius: var(--_radius); }
+.wui-tab-list--pill[data-wui-ink]::after {
+  top: 4px; bottom: 4px; height: auto; z-index: 0; border-radius: var(--_radius);
+  width: var(--wui-tab-w); translate: var(--wui-tab-x) 0;
+}
+
+/* panel: the newly shown one slides in from the side its tab is on */
+.wui-tab-panel:focus-visible { outline: 2px solid var(--wui-accent, var(--c-accent, #0B57D0)); outline-offset: 2px; border-radius: 4px; }
+.wui-tab-panel[data-wui-from] { transition: opacity .2s ease, translate .3s cubic-bezier(.2, .8, .2, 1); }
+.wui-tab-panel[data-wui-from="next"] { --_from: 14px; }
+.wui-tab-panel[data-wui-from="prev"] { --_from: -14px; }
+@starting-style {
+  .wui-tab-panel[data-wui-from] { opacity: 0; translate: var(--_from) 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wui-tab-list[data-wui-ink]::after, .wui-tab-panel[data-wui-from] { transition: none; }
+}

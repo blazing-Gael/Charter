@@ -1,0 +1,77 @@
+/* wui menu — the panel for dropdown + context menus (menu.js drives it). Renders in the
+   top layer, so there is no z-index here. The root uses the Popover API; a submenu is a
+   plain fixed panel that paints in the same top layer because it lives inside the popover.
+
+     <div class="wui-menu" role="menu">
+       <button class="wui-menu-item">New <span class="wui-menu-key">Ctrl N</span></button>
+       <hr class="wui-menu-sep">
+       <button class="wui-menu-item wui-menu-item--danger">Delete</button>
+     </div>
+
+   THEMING chain (per property): --wui-menu-X → --wui-X → --c-X (host) → default. */
+
+.wui-menu {
+  --_bg:     var(--wui-menu-bg,     var(--wui-surface, var(--c-surface, #fff)));
+  --_text:   var(--wui-menu-text,   var(--wui-text,    var(--c-text-main, #202124)));
+  --_muted:  var(--wui-menu-muted,  var(--wui-muted,   var(--c-text-faint, #8a8f98)));
+  --_border: var(--wui-menu-border, var(--wui-border,  var(--c-border, #DADCE0)));
+  --_hover:  var(--wui-menu-hover,  color-mix(in srgb, var(--wui-accent, var(--c-accent, #0B57D0)) 12%, transparent));
+  --_danger: var(--wui-menu-danger, var(--wui-danger,  var(--c-danger, #D93025)));
+  --_radius: var(--wui-menu-radius, var(--wui-radius,  var(--r-md, 10px)));
+  --_minw:   var(--wui-menu-min-width, 200px);           /* floor; width still grows to fit content */
+  --_maxw:   var(--wui-menu-max-width, min(92vw, 320px));/* ceiling (long labels wrap past it)        */
+  --_font:   var(--wui-font, var(--font, inherit));
+
+  position: fixed; margin: 0; inset: auto;               /* reset the popover's centering; JS sets left/top */
+  min-width: var(--_minw); max-width: var(--_maxw); max-height: 70vh; overflow: auto;
+  padding: 6px; box-sizing: border-box;
+  background: var(--_bg); color: var(--_text);
+  border: 1px solid var(--_border); border-radius: var(--_radius);
+  box-shadow: 0 6px 24px -6px rgba(0,0,0,.28), 0 2px 6px -2px rgba(0,0,0,.18);
+  font-size: 14px; line-height: 1.4; font-family: var(--_font);
+}
+.wui-menu:not(:popover-open):not(.wui-open) { display: none; }   /* fallback hidden state */
+
+/* ── item ── */
+.wui-menu-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 7px 10px; border: 0; border-radius: calc(var(--_radius) - 4px);
+  background: transparent; color: inherit; font: inherit; text-align: left; text-decoration: none;
+  cursor: pointer; user-select: none;
+}
+.wui-menu-item:focus { outline: none; background: var(--_hover); }   /* focus is the hover look (JS roves focus) */
+.wui-menu-item--danger { color: var(--_danger); }
+.wui-menu-item[disabled], .wui-menu-item[aria-disabled="true"] { color: var(--_muted); cursor: default; pointer-events: none; }
+
+.wui-menu-ico { display: inline-flex; width: 16px; height: 16px; flex-shrink: 0; color: var(--_muted); }
+.wui-menu-ico > svg { width: 100%; height: 100%; }
+.wui-menu-key { margin-left: auto; padding-left: 16px; color: var(--_muted); font-size: .85em; white-space: nowrap; }
+
+/* ── separator + section label ── */
+.wui-menu-sep { height: 0; margin: 5px 6px; border: 0; border-top: 1px solid var(--_border); }
+.wui-menu-label { padding: 6px 10px 2px; color: var(--_muted); font-size: .76em; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+
+/* ── checkable: a tick in the gutter when checked ── */
+.wui-menu-item[role="menuitemcheckbox"]::before,
+.wui-menu-item[role="menuitemradio"]::before {
+  content: ""; width: 16px; height: 16px; flex-shrink: 0;
+  background: currentColor; opacity: 0;
+  -webkit-mask: var(--_tick) center / 15px no-repeat; mask: var(--_tick) center / 15px no-repeat;
+  --_tick: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.4"><path d="M5 12l5 5L19 7"/></svg>');
+}
+.wui-menu-item[aria-checked="true"]::before { opacity: 1; }
+
+/* ── submenu: a chevron on the parent, and the panel itself ── */
+.wui-menu-item[aria-haspopup="menu"]::after {
+  content: ""; width: 8px; height: 8px; margin-left: auto; flex-shrink: 0;
+  border-right: 1.6px solid var(--_muted); border-top: 1.6px solid var(--_muted); transform: rotate(45deg);
+}
+.wui-menu-item[aria-haspopup="menu"] .wui-menu-key { margin-left: auto; padding-right: 6px; }
+.wui-menu-item[aria-haspopup="menu"]:has(.wui-menu-key)::after { margin-left: 0; }
+
+/* ── open animation (progressive; no-op where unsupported) ── */
+@media (prefers-reduced-motion: no-preference) {
+  .wui-menu { transition: opacity .12s ease, transform .12s ease; }
+  .wui-menu:popover-open, .wui-menu.wui-open { opacity: 1; transform: none; }
+  @starting-style { .wui-menu:popover-open, .wui-menu.wui-open { opacity: 0; transform: translateY(-4px) scale(.98); } }
+}

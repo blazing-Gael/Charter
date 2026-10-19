@@ -76,6 +76,14 @@
       }
       if (!el.style.length) el.removeAttribute("style");
     });
+    // Tabs: the editor shows one panel at a time via an is-active class and may hide the
+    // rest; stored markup is the canonical all-panels-visible shape (wui/tabs.js re-derives
+    // which to show from aria-current). The ＋/× controls are <button>s already dropped upstream.
+    doc.body.querySelectorAll(".wui-tabs .wui-tab-panel").forEach(function (p) {
+      p.classList.remove("is-active");
+      p.hidden = false;
+      if (!p.className) p.removeAttribute("class");
+    });
     return doc.body.innerHTML;
   }
 

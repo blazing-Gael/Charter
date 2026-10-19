@@ -83,6 +83,17 @@ func (e *extractor) walk(n *html.Node) {
 	case hasAttr(n, "data-callout"):
 		e.add("callout", textOf(n), func(b *Block) { b.Variant = attr(n, "data-callout-tone") })
 		return
+	case hasClass(n, "wui-tabs"):
+		// Code group (panels wrap <pre>) → one code block each; plain tabs → one tabs block.
+		if hasClass(n, "wui-tabs--code") {
+			for _, pre := range descendants(n, "pre") {
+				lang := langOf(firstDesc(pre, "code"))
+				e.add("code", textOf(pre), func(b *Block) { b.Lang = lang })
+			}
+		} else {
+			e.add("tabs", textOf(n), nil)
+		}
+		return
 	case hasAttr(n, "data-tabs"):
 		e.add("tabs", textOf(n), nil)
 		return
@@ -190,6 +201,22 @@ func firstDesc(n *html.Node, tag string) *html.Node {
 	return nil
 }
 
+// descendants returns every descendant element with the given tag, in document order.
+func descendants(n *html.Node, tag string) []*html.Node {
+	var out []*html.Node
+	var rec func(*html.Node)
+	rec = func(x *html.Node) {
+		for c := x.FirstChild; c != nil; c = c.NextSibling {
+			if c.Type == html.ElementNode && c.Data == tag {
+				out = append(out, c)
+			}
+			rec(c)
+		}
+	}
+	rec(n)
+	return out
+}
+
 // textOf gathers all descendant text, whitespace-normalized.
 func textOf(n *html.Node) string {
 	if n == nil {
@@ -208,6 +235,16 @@ func textOf(n *html.Node) string {
 	}
 	rec(n)
 	return norm(sb.String())
+}
+
+// hasClass reports whether n's class attribute contains cls (whitespace-separated).
+func hasClass(n *html.Node, cls string) bool {
+	for _, c := range strings.Fields(attr(n, "class")) {
+		if c == cls {
+			return true
+		}
+	}
+	return false
 }
 
 func hasAttr(n *html.Node, key string) bool {
@@ -260,6 +297,11 @@ func withHeadingIDs(body string) (template.HTML, []Heading) {
 	var outline []Heading
 	var walk func(*html.Node)
 	walk = func(n *html.Node) {
+		// A tab group hides all but one panel; its inner headings would link to hidden
+		// content, so they stay out of the "On this page" outline.
+		if n.Type == html.ElementNode && hasClass(n, "wui-tabs") {
+			return
+		}
 		if n.Type == html.ElementNode && len(n.Data) == 2 && n.Data[0] == 'h' && n.Data[1] >= '2' && n.Data[1] <= '4' {
 			text := textOf(n)
 			id := attr(n, "id")

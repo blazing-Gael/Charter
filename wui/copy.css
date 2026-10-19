@@ -1,0 +1,110 @@
+/* wui copy — a copy-to-clipboard button. Styles here; copy.js does the copying.
+   The icons are CSS masks drawn in currentColor, so the tick can draw itself in.
+
+     <button type="button" class="wui-copy" data-copy="#hook-url" aria-label="Copy URL" data-tip="Copy"></button>
+
+     <button type="button" class="wui-copy wui-copy--label wui-copy--clipboard" data-copy-text="run_8f3a91c2">
+       <span class="wui-copy-label"><span data-copy-idle>Copy run ID</span><span data-copy-done aria-hidden="true">Copied</span></span>
+     </button>
+
+   What it copies (copy.js): data-copy="#id" (an input's value, or any element's text — also a
+   <template> or <script type="text/plain"> holding a big hidden value), data-copy-text="…",
+   or data-copy-url="…" (fetched on click).
+
+   Looks:
+     (default)             copy icon → a tick draws in
+     .wui-copy--clipboard  a clipboard; a small tick draws inside it
+     .wui-copy--label      with text; "Copy…" → "Copied" (both in the markup, width doesn't jump)
+     .wui-copy--tip        "Copied" also pops up as a tooltip (needs tooltip.js; text: data-copy-tip)
+     .wui-copy--sm         smaller
+   .wui-copy-block around a <pre> / any box: the button sits top-right and shows on hover.
+
+   THEMING chain: --wui-copy-X → --wui-X → --c-X (host) → default.
+     --wui-copy-done  tick / "Copied" colour (→ --wui-success)   --wui-copy-size  32px */
+
+.wui-copy {
+  --_text:   var(--wui-copy-text,   var(--wui-muted,     var(--c-text-muted, #5F6368)));
+  --_strong: var(--wui-copy-strong, var(--wui-text,      var(--c-text-main,  #202124)));
+  --_hover:  var(--wui-copy-hover,  var(--wui-hover,     var(--c-hover,      rgba(0,0,0,.05))));
+  --_done:   var(--wui-copy-done,   var(--wui-success,   var(--c-success,    #1E7B34)));
+  --_fail:   var(--wui-copy-fail,   var(--wui-danger,    var(--c-danger,     #B3261E)));
+  --_ring:   var(--wui-copy-ring,   var(--wui-accent,    var(--c-accent,     #0B57D0)));
+  --_border: var(--wui-copy-border, var(--wui-border,    var(--c-border,     #DADCE0)));
+  --_bg:     var(--wui-copy-bg,     var(--wui-surface,   var(--c-surface,    #FFFFFF)));
+  --_radius: var(--wui-copy-radius, var(--wui-radius-sm, var(--r-sm,         8px)));
+  --_font:   var(--wui-font,        var(--font,          inherit));
+  --_size: var(--wui-copy-size, 32px);
+  --_icon: 18px;
+  --_pad: calc((var(--_size) - var(--_icon)) / 2);   /* where the icon sits from the left */
+  --_m-copy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='8' y='8' width='13' height='13' rx='2.5'/%3E%3Cpath d='M16 8V5.5A2.5 2.5 0 0 0 13.5 3h-8A2.5 2.5 0 0 0 3 5.5v8A2.5 2.5 0 0 0 5.5 16H8'/%3E%3C/svg%3E");
+  --_m-board: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.5 4H7a2.5 2.5 0 0 0-2.5 2.5v13A2.5 2.5 0 0 0 7 22h10a2.5 2.5 0 0 0 2.5-2.5v-13A2.5 2.5 0 0 0 17 4h-1.5'/%3E%3Crect x='8.5' y='2' width='7' height='4' rx='1.5'/%3E%3C/svg%3E");
+  --_m-tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.5l5 5L19.5 7'/%3E%3C/svg%3E");
+  --_m-tick-in: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.5 14l2.5 2.5 4.5-5'/%3E%3C/svg%3E");
+  --_m-fail: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M12 6v7M12 18h.01'/%3E%3C/svg%3E");
+  appearance: none; box-sizing: border-box; position: relative; margin: 0; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; vertical-align: middle;
+  min-width: var(--_size); height: var(--_size); border: 0; border-radius: var(--_radius);
+  background: none; color: var(--_text); cursor: pointer;
+  font-family: var(--_font); font-size: 13px; font-weight: 500; line-height: 1; white-space: nowrap;
+  transition: background .15s, color .2s;
+}
+.wui-copy:hover { background: var(--_hover); color: var(--_strong); }
+.wui-copy:focus-visible { outline: 2px solid var(--_ring); outline-offset: 1px; }
+.wui-copy[data-copied] { color: var(--_done); }
+.wui-copy[data-copy-failed] { color: var(--_fail); }
+
+/* the icon (::before) and the tick drawn over it (::after) */
+.wui-copy::before, .wui-copy::after {
+  content: ""; flex: none; width: var(--_icon); height: var(--_icon); background: currentColor;
+  -webkit-mask: var(--_m) center / contain no-repeat; mask: var(--_m) center / contain no-repeat;
+}
+.wui-copy::before { --_m: var(--_m-copy); transition: opacity .15s, scale .2s; }
+.wui-copy::after {
+  --_m: var(--_m-tick); position: absolute; left: var(--_pad); top: 50%; translate: 0 -50%;
+  opacity: 0; clip-path: inset(0 100% 0 0);
+  transition: opacity .15s, clip-path 0s .15s;          /* going back: fade, then reset unseen */
+}
+.wui-copy[data-copied]::before { opacity: 0; scale: .6; }
+.wui-copy[data-copied]::after {
+  opacity: 1; clip-path: inset(0 0 0 0);
+  transition: opacity .1s, clip-path .38s cubic-bezier(.4, 0, .2, 1) .06s;   /* the tick draws left → right */
+}
+
+/* clipboard: the board stays, a small tick draws inside it */
+.wui-copy--clipboard::before { --_m: var(--_m-board); }
+.wui-copy--clipboard::after { --_m: var(--_m-tick-in); }
+.wui-copy--clipboard[data-copied]::before { opacity: 1; scale: 1; }
+
+/* failed (clipboard blocked): a "!" and a small shake */
+.wui-copy[data-copy-failed]::before { --_m: var(--_m-fail); animation: wui-copy-shake .32s; }
+
+/* with text: the two labels share one cell, so the button keeps the wider one's width */
+.wui-copy--label {
+  --_pad: 11px; padding: 0 14px 0 var(--_pad); justify-content: flex-start;
+  border: 1px solid var(--_border); background: var(--_bg); color: var(--_strong);
+}
+.wui-copy--label:hover { background: var(--_hover); }
+.wui-copy--label[data-copied] { color: var(--_done); }
+.wui-copy-label { display: inline-grid; }
+.wui-copy-label > * { grid-area: 1 / 1; transition: opacity .15s, translate .2s; }
+.wui-copy-label > [data-copy-done] { opacity: 0; translate: 0 4px; }
+.wui-copy[data-copied] .wui-copy-label > [data-copy-idle] { opacity: 0; translate: 0 -4px; }
+.wui-copy[data-copied] .wui-copy-label > [data-copy-done] { opacity: 1; translate: 0; }
+
+.wui-copy--sm { --_size: var(--wui-copy-size, 28px); --_icon: 16px; font-size: 12px; }
+
+/* on a code block / box: top-right, shown on hover or focus (always on touch screens) */
+.wui-copy-block { position: relative; }
+.wui-copy-block > .wui-copy {
+  position: absolute; top: 8px; right: 8px; z-index: 1;
+  background: var(--_bg); box-shadow: 0 0 0 1px var(--_border);
+  opacity: 0; transition: opacity .15s, background .15s, color .2s;
+}
+.wui-copy-block:is(:hover, :focus-within) > .wui-copy, .wui-copy-block > .wui-copy:is([data-copied], [data-copy-failed]) { opacity: 1; }
+@media (hover: none) { .wui-copy-block > .wui-copy { opacity: 1; } }
+
+@keyframes wui-copy-shake { 25% { translate: -2px 0; } 75% { translate: 2px 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .wui-copy::before, .wui-copy::after, .wui-copy-label > * { transition: none !important; animation: none !important; }
+}

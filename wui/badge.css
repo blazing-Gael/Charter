@@ -1,0 +1,41 @@
+/* wui badge — a small status or count label. CSS-only, no JS.
+   One colour (the tone) drives text, tint and border, so a new tone is one variable.
+
+     <span class="wui-badge">Draft</span>
+     <span class="wui-badge" data-tone="success"><i class="ph ph-check"></i> Success</span>
+     <span class="wui-badge" data-tone="info"><span class="wui-spin" aria-hidden="true"></span> Running</span>
+     <span class="wui-badge wui-badge--count" data-tone="accent">3</span>
+
+   data-tone="accent|success|warn|danger|info"   (default: neutral)
+   Modifiers (combine freely):
+     --solid    filled with the tone          --outline  border, no tint
+     --dot      a status dot before the text  --count    a round number pill
+     --sm       smaller
+   Any colour: style="--wui-badge-tone: var(--cat)".
+
+   THEMING chain: --wui-badge-X → --wui-X → --c-X (host) → default. */
+
+.wui-badge {
+  --_tone:   var(--wui-badge-tone,   var(--wui-muted,       var(--c-text-muted, #5F6368)));
+  --_radius: var(--wui-badge-radius, var(--wui-radius-full, var(--r-full,       999px)));
+  --_on:     var(--wui-on-color,     var(--c-ink-fg,        #FFFFFF));
+  --_font:   var(--wui-font,         var(--font,            inherit));
+  box-sizing: border-box; display: inline-flex; align-items: center; gap: 5px; vertical-align: middle;
+  height: 22px; padding: 0 8px; border: 1px solid transparent; border-radius: var(--_radius);
+  font-family: var(--_font); font-size: 12px; font-weight: 600; line-height: 1; white-space: nowrap;
+  color: var(--_tone); background: color-mix(in srgb, var(--_tone) 12%, transparent);
+}
+.wui-badge > i { font-size: 1.15em; }
+
+.wui-badge[data-tone="accent"]  { --_tone: var(--wui-accent,  var(--c-accent,  #0B57D0)); }
+.wui-badge[data-tone="success"] { --_tone: var(--wui-success, var(--c-success, #1E7B34)); }
+.wui-badge[data-tone="warn"]    { --_tone: var(--wui-warn,    var(--c-warn,    #A15C00)); }
+.wui-badge[data-tone="danger"]  { --_tone: var(--wui-danger,  var(--c-danger,  #B3261E)); }
+.wui-badge[data-tone="info"]    { --_tone: var(--wui-info,    var(--c-info,    #0B57D0)); }
+
+.wui-badge--solid   { background: var(--_tone); color: var(--_on); }
+.wui-badge--outline { background: transparent; border-color: color-mix(in srgb, var(--_tone) 45%, transparent); }
+.wui-badge--dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.wui-badge--count { min-width: 22px; justify-content: center; padding: 0 6px; font-variant-numeric: tabular-nums; }
+.wui-badge--sm { height: 18px; padding: 0 6px; gap: 4px; font-size: 11px; }
+.wui-badge--sm.wui-badge--count { min-width: 18px; padding: 0 5px; }

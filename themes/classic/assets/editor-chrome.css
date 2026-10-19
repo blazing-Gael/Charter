@@ -65,14 +65,55 @@
   border-radius: var(--r); box-shadow: var(--shadow); padding: 6px;
 }
 .rte-slash[hidden] { display: none; }
-.rte-slash__list { list-style: none; margin: 0; padding: 0; }
-.rte-slash__item {
-  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
-  border-radius: var(--r-sm); color: var(--fg-muted); font-size: 13.5px; cursor: pointer;
+/* Rows are wui `.wui-menu-item`s (styled by menu.css). We drive keyboard selection, so
+   the active row is marked .is-sel/[aria-selected] and gets the same look menu.js gives a
+   focused row. Phosphor <i> inside the 16px ico box needs an explicit size. */
+.rte-slash .wui-menu-item .wui-menu-ico .ph { font-size: 17px; }
+.rte-slash .wui-menu-item.is-sel { background: var(--hover); color: var(--fg); }
+.rte-slash .wui-menu-item.is-sel .wui-menu-ico { color: var(--fg); }
+
+/* ── tabs authoring (editor-tabs.js) ───────────────────────────────────────
+   In the editor one panel shows at a time, like the published view. The tab bar is
+   chrome (contenteditable=false); only the chip labels are editable. The ＋/× buttons
+   and the is-active class are editor-only and stripped on save. */
+#doc-editor .wui-tab-panel { display: none; }
+#doc-editor .wui-tab-panel.is-active { display: block; }
+#doc-editor a.wui-tab { cursor: text; }                 /* click places the caret to rename */
+#doc-editor a.wui-tab[aria-current="true"] { color: var(--fg); }
+#doc-editor a.wui-tab[aria-current="true"]::after {
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: 0;
+  height: 2px; background: var(--accent); border-radius: 2px 2px 0 0;
 }
-.rte-slash__item .ph { font-size: 17px; color: var(--fg-faint); flex: none; }
-.rte-slash__item.is-sel, .rte-slash__item:hover { background: var(--hover); color: var(--fg); }
-.rte-slash__item.is-sel .ph, .rte-slash__item:hover .ph { color: var(--fg); }
+#doc-editor .wui-tab-add, #doc-editor .wui-tab-del {
+  appearance: none; border: 0; background: none; cursor: pointer; flex: none;
+  height: 40px; padding: 0 9px; font-size: 15px; line-height: 1; color: var(--fg-faint);
+}
+#doc-editor .wui-tab-add:hover, #doc-editor .wui-tab-del:hover { color: var(--accent); }
+#doc-editor .wui-tab-del { margin-left: -4px; }
+
+/* ── table authoring (editor-table.js) ─────────────────────────────────────
+   One fixed overlay of <button>s positioned over the active table by its rect, so the
+   stored <table> is never touched. ＋ strips add a column (right) / row (bottom); the
+   × chips delete the caret's column (top) / row (left). */
+.doc-table-tools { position: fixed; inset: 0; z-index: 55; pointer-events: none; }
+.doc-table-tools[hidden] { display: none; }
+.doc-tt {
+  position: fixed; pointer-events: auto; appearance: none; cursor: pointer;
+  color: var(--fg-faint); background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--r);
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.doc-tt[hidden] { display: none; }
+.doc-tt:hover { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+/* ＋ / × marks, drawn as centered bars so they never drift with font metrics */
+.doc-tt::before, .doc-tt::after { content: ""; position: absolute; top: 50%; left: 50%; background: currentColor; border-radius: 1px; }
+.doc-tt--addcol::before, .doc-tt--addrow::before { width: 11px; height: 1.6px; transform: translate(-50%, -50%); }
+.doc-tt--addcol::after,  .doc-tt--addrow::after  { width: 1.6px; height: 11px; transform: translate(-50%, -50%); }
+.doc-tt--delcol::before, .doc-tt--delrow::before { width: 12px; height: 1.6px; transform: translate(-50%, -50%) rotate(45deg); }
+.doc-tt--delcol::after,  .doc-tt--delrow::after  { width: 12px; height: 1.6px; transform: translate(-50%, -50%) rotate(-45deg); }
+.doc-tt--addcol { width: 20px; }                         /* height = table height (set inline) */
+.doc-tt--addrow { height: 20px; }                        /* width = table width (set inline) */
+.doc-tt--delcol, .doc-tt--delrow { width: 22px; height: 22px; border-radius: 50%; }
+.doc-tt--delcol:hover, .doc-tt--delrow:hover { color: #fff; background: var(--wui-tone-danger, #b3261e); border-color: var(--wui-tone-danger, #b3261e); }
 
 /* ── selection bubble ──────────────────────────────────────────────────── */
 .rte-bubble {

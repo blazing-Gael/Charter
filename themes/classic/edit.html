@@ -7,14 +7,18 @@
       <a class="brand" href="/"><span class="brand__mark">▚</span><span class="brand__name">{{.SiteName}}</span></a>
       <span class="badge {{if .Published}}badge--live{{else}}badge--draft{{end}}" id="status-badge">{{if .Published}}Published{{else}}Draft{{end}}</span>
     </div>
+    {{/* Editor actions take the leading slot (where Search sits in read mode); the trailing
+         cluster [GitHub][theme][Preview toggle] matches the reading topbar so the chrome
+         doesn't jump between modes. Preview is the Edit toggle flipped. */}}
     <div class="topbar__group" data-edit-id="{{.EditID}}" data-edit-slug="{{.EditSlug}}" data-published="{{.Published}}">
-      <a class="icon-btn" href="/p/{{.EditSlug}}" aria-label="View live" data-tip="View live page" data-tip-pos="bottom"><i class="ph ph-eye"></i></a>
       <button class="btn btn-ghost btn--sm" data-action="save" data-tip="Save (Ctrl+S)" data-tip-pos="bottom"><i class="ph ph-floppy-disk"></i> Save</button>
       <button class="btn btn--sm" data-action="publish">{{if .Published}}Unpublish{{else}}Publish{{end}}</button>
       <button class="btn btn-ghost btn--sm" data-action="export" data-tip="Build static site" data-tip-pos="bottom"><i class="ph ph-export"></i> Export</button>
+      <a class="icon-btn" href="https://github.com/blazing-Gael/dcms" target="_blank" rel="noopener" aria-label="GitHub" data-tip="GitHub" data-tip-pos="bottom"><i class="ph ph-github-logo"></i></a>
       <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle theme" data-tip="Toggle theme" data-tip-pos="bottom">
         <i class="ph ph-moon icon-dark"></i><i class="ph ph-sun icon-light"></i>
       </button>
+      <a class="btn btn-ghost btn--sm topbar__toggle" href="/p/{{.EditSlug}}" data-tip="Preview the live page" data-tip-pos="bottom"><i class="ph ph-eye"></i> Preview</a>
     </div>
   </header>
 
@@ -81,6 +85,8 @@
   <script src="/editor/editor.js" defer></script>
   <script src="/assets/editor-boot.js" defer></script>
   <script src="/assets/editor-slash.js" defer></script>
+  <script src="/assets/editor-tabs.js" defer></script>
+  <script src="/assets/editor-table.js" defer></script>
   <script src="/assets/editor-link.js" defer></script>
   <script src="/assets/editor-bubble.js" defer></script>
   <script src="/assets/app.js" defer></script>

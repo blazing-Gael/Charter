@@ -1,0 +1,48 @@
+/* wui group — joins neighbouring controls into one bar: shared borders, rounded
+   only at the two outer ends. CSS-only, no JS. It styles no control itself, only
+   how they meet, so it takes inputs, buttons, wui select, wui number, segments…
+
+     <div class="wui-group">
+       <span class="wui-group-addon">https://</span>
+       <input name="host">
+       <button type="button">Test</button>
+     </div>
+
+   .wui-group--block   full width; inputs and selects take the spare room
+   .wui-group-addon    fixed text or an icon at either end (https://, ms, @gmail.com)
+
+   A wui select puts a hidden native <select> before its visible box, so "first"
+   below means "first visible": :first-child, or the box right after that hidden select.
+
+   THEMING chain: --wui-group-X → --wui-X → --c-X (host) → default. */
+
+.wui-group {
+  --_border: var(--wui-group-border, var(--wui-border,    var(--c-border,     #DADCE0)));
+  --_addon:  var(--wui-group-addon,  var(--wui-hover,     var(--c-surface-2,  #F1F3F4)));
+  --_muted:  var(--wui-group-muted,  var(--wui-muted,     var(--c-text-muted, #5F6368)));
+  --_radius: var(--wui-group-radius, var(--wui-radius-sm, var(--r-sm,         8px)));
+  --_font:   var(--wui-font,         var(--font,          inherit));
+  display: inline-flex; align-items: stretch; vertical-align: middle;
+}
+.wui-group--block { display: flex; }
+.wui-group--block > :is(input, textarea, .xsel, .wui-num) { flex: 1 1 auto; min-width: 0; }
+
+/* overlap the borders, and square the inner corners */
+.wui-group > :not(:first-child, .xsel-native:first-child + *) { margin-inline-start: -1px; }
+.wui-group > :not(:first-child, .xsel-native:first-child + *),
+.wui-group > .xsel:not(.xsel-native:first-child + *) > .xsel-trigger { border-start-start-radius: 0; border-end-start-radius: 0; }
+.wui-group > :not(:last-child),
+.wui-group > .xsel:not(:last-child) > .xsel-trigger { border-start-end-radius: 0; border-end-end-radius: 0; }
+
+/* the hovered or focused control sits on top, so its whole border and ring show */
+.wui-group > :not(.xsel-native):is(:hover, :focus-visible, :focus-within) { position: relative; z-index: 1; }
+/* an open dropdown stays above the controls around it (the group makes no stacking layer of its own) */
+.wui-group > :is(.xsel.open, .xsel.openUp) { z-index: 2; }
+
+.wui-group-addon {
+  box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; flex: none;
+  padding: 0 12px; border: 1px solid var(--_border); border-radius: var(--_radius);
+  background: var(--_addon); color: var(--_muted);
+  font-family: var(--_font); font-size: 13.5px; white-space: nowrap;
+}
+.wui-group-addon > i { font-size: 16px; }

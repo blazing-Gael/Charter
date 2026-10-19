@@ -9,6 +9,31 @@
   var ZWSP = /​/g;
   function cmd(name, args) { window.composeCommand(ed, name, args); }
 
+  // A fresh id base per inserted block, so several tab groups on one page never collide.
+  function rid() { return Math.random().toString(36).slice(2, 8); }
+
+  // wui tabs: a .wui-tab-list of anchor links over .wui-tab-panel sections (ELEMENT_CONTRACT
+  // + wui/tabs.js). Stored with every panel visible and no `hidden`; tabs.js hides all but the
+  // selected one on the reading page, and leaves them all visible (editable) in the editor.
+  function tabsHTML() {
+    var a = "t-" + rid(), b = "t-" + rid();
+    return '<div class="wui-tabs"><div class="wui-tab-list" aria-label="Tabs">' +
+      '<a class="wui-tab" href="#' + a + '" aria-current="true">Tab one</a>' +
+      '<a class="wui-tab" href="#' + b + '">Tab two</a></div>' +
+      '<section class="wui-tab-panel" id="' + a + '"><p>First tab.</p></section>' +
+      '<section class="wui-tab-panel" id="' + b + '"><p>Second tab.</p></section></div>';
+  }
+
+  // Code group = tabs whose panels each wrap a code block; the tab label is the filename.
+  function codeGroupHTML() {
+    var a = "c-" + rid(), b = "c-" + rid();
+    return '<div class="wui-tabs wui-tabs--code"><div class="wui-tab-list" aria-label="Code">' +
+      '<a class="wui-tab" href="#' + a + '" aria-current="true">file.go</a>' +
+      '<a class="wui-tab" href="#' + b + '">go.mod</a></div>' +
+      '<section class="wui-tab-panel" id="' + a + '"><pre><code class="language-go">one</code></pre></section>' +
+      '<section class="wui-tab-panel" id="' + b + '"><pre><code class="language-">two</code></pre></section></div>';
+  }
+
   // run: operates on the current (now-empty) line. insert: replaces the line with html.
   var ITEMS = [
     { label: "Heading 2", icon: "ph-text-h-two", keys: "h2 heading title", run: function () { cmd("block", { tag: "h2" }); } },
@@ -21,18 +46,27 @@
     { label: "Divider", icon: "ph-minus", keys: "divider rule hr separator", insert: "<hr>" },
     { label: "Code block", icon: "ph-code", keys: "code pre snippet", insert: '<pre><code class="language-">code</code></pre>' },
     { label: "Callout", icon: "ph-warning-circle", keys: "callout note aside admonition", insert: '<aside data-callout data-callout-tone="info"><p>Callout text</p></aside>' },
+    { label: "Details", icon: "ph-caret-circle-down", keys: "details accordion disclosure toggle collapse", insert: "<details><summary>Summary</summary><p>Hidden content.</p></details>" },
+    { label: "Table", icon: "ph-table", keys: "table grid rows columns", insert: '<table><thead><tr><th>Column</th><th>Column</th></tr></thead><tbody><tr><td><br></td><td><br></td></tr><tr><td><br></td><td><br></td></tr></tbody></table>' },
     { label: "Steps", icon: "ph-list-checks", keys: "steps stepper howto", insert: "<ol data-steps><li>First step</li><li>Second step</li></ol>" },
-    { label: "Code group", icon: "ph-code-block", keys: "code group tabs", insert: '<div data-code-group><pre><code class="language-">one</code></pre><pre><code class="language-">two</code></pre></div>' }
+    { label: "Timeline", icon: "ph-git-commit", keys: "timeline history dates events changelog", insert: "<ol data-timeline><li><time>Date</time>First event</li><li><time>Date</time>Second event</li></ol>" },
+    { label: "Tabs", icon: "ph-browsers", keys: "tabs tabbed sections", insert: tabsHTML },
+    { label: "Code group", icon: "ph-code-block", keys: "code group tabs files", insert: codeGroupHTML },
+    { label: "Cards", icon: "ph-squares-four", keys: "cards grid links tiles", insert: '<div data-cards><a class="xcard" href="/p/">Card one</a><a class="xcard" href="/p/">Card two</a></div>' }
   ];
 
-  // menu DOM, created once, portaled to <body> so it is never clipped.
+  // menu DOM, created once, portaled to <body> so it is never clipped. Rows are wui
+  // `.wui-menu-item`s (same look as the page dropdown), but the panel is NOT a `.wui-menu`
+  // on purpose: this is a type-to-filter combobox — focus stays in the editor — and the
+  // wui menu driver's roving focus (focuses the hovered row) would blur the editor and
+  // close us. We drive selection ourselves; menu.js's global handlers gate on a `.wui-menu`
+  // ancestor, so they skip this panel.
   var menu = document.createElement("div");
-  menu.className = "rte-slash";
+  menu.className = "rte-slash wui-scroll";   // wui-scroll = thin themed scrollbar when the list overflows
   menu.setAttribute("role", "listbox");
   menu.hidden = true;
-  menu.innerHTML = '<ul class="rte-slash__list"></ul>';
   document.body.appendChild(menu);
-  var list = menu.querySelector(".rte-slash__list");
+  var list = menu;
 
   var open = false, sel = 0, line = null, filtered = [];
 
@@ -73,9 +107,15 @@
     if (!filtered.length) { closeMenu(); return; }
     if (sel >= filtered.length) sel = 0;
     list.innerHTML = filtered.map(function (it, i) {
-      return '<li class="rte-slash__item' + (i === sel ? " is-sel" : "") + '" data-i="' + i + '">' +
-        '<i class="ph ' + it.icon + '"></i><span>' + it.label + "</span></li>";
+      var on = i === sel;
+      return '<button type="button" role="option" class="wui-menu-item' + (on ? " is-sel" : "") +
+        '" aria-selected="' + on + '" data-i="' + i + '">' +
+        '<span class="wui-menu-ico"><i class="ph ' + it.icon + '"></i></span>' + it.label + "</button>";
     }).join("");
+    // keep the keyboard-selected row in view when the list overflows (block:nearest only
+    // scrolls the menu, minimally — no page jump for an already-visible row).
+    var selEl = list.children[sel];
+    if (selEl) selEl.scrollIntoView({ block: "nearest" });
   }
 
   function openMenu(ln) {
@@ -100,7 +140,8 @@
     if (it.run) { clearSlash(ln); it.run(); return; }
     // insert: replace the slash line wholesale (one undo step, no stray blanks)
     ln.id = "__slash_target";
-    window.insertBlocks(ed, { html: it.insert, replace: "#__slash_target" });
+    var html = typeof it.insert === "function" ? it.insert() : it.insert;
+    window.insertBlocks(ed, { html: html, replace: "#__slash_target" });
   }
 
   // "/" on an empty line opens; typing after refilters; deleting the "/" closes.

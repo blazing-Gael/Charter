@@ -104,6 +104,13 @@ func (m *mdConv) block(n *html.Node) {
 		m.callout(n)
 		return
 	}
+	// wui tabs / code-group: a .wui-tab-list of labels over .wui-tab-panel sections.
+	// Markdown has no tabs, so each panel becomes an h4 of its label + its content
+	// (code-group panels wrap a <pre>, so they fence as code blocks).
+	if hasClass(n, "wui-tabs") {
+		m.tabs(n)
+		return
+	}
 	if hasAttr(n, "data-code-group") {
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
 			if c.Type == html.ElementNode && c.Data == "pre" {
@@ -167,6 +174,41 @@ func (m *mdConv) callout(n *html.Node) {
 		m.sb.WriteString("> " + ln + "\n")
 	}
 	m.sb.WriteString("\n")
+}
+
+// tabs renders a wui tabs / code-group block. It maps each tab link's target id to its
+// label, then walks the panels: each becomes an h4 of its label followed by its content.
+func (m *mdConv) tabs(n *html.Node) {
+	labels := map[string]string{}
+	var collect func(*html.Node)
+	collect = func(x *html.Node) {
+		if x.Type == html.ElementNode && x.Data == "a" && hasClass(x, "wui-tab") {
+			if h := attr(x, "href"); strings.HasPrefix(h, "#") {
+				labels[h[1:]] = strings.TrimSpace(m.inline(x))
+			}
+		}
+		for c := x.FirstChild; c != nil; c = c.NextSibling {
+			collect(c)
+		}
+	}
+	collect(n)
+
+	var panels func(*html.Node)
+	panels = func(x *html.Node) {
+		if x.Type == html.ElementNode && hasClass(x, "wui-tab-panel") {
+			if lbl := labels[attr(x, "id")]; lbl != "" {
+				m.sb.WriteString("#### " + lbl + "\n\n")
+			}
+			for c := x.FirstChild; c != nil; c = c.NextSibling {
+				m.block(c)
+			}
+			return
+		}
+		for c := x.FirstChild; c != nil; c = c.NextSibling {
+			panels(c)
+		}
+	}
+	panels(n)
 }
 
 // codeBlock renders a <pre> as a fenced block, keeping its language.

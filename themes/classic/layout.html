@@ -11,12 +11,24 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
   <link rel="stylesheet" href="/assets/styles.css">
-  <!-- wui component library: shared top-layer placer + tooltips (data-tip). Loaded
-       here so tooltips work on every page; float.js must precede tooltip.js, and
-       both precede the deferred editor chrome that uses wui.float. -->
+  <!-- wui component library: shared top-layer placer + tooltips (data-tip) + the
+       kit the theme builds with (menu, copy, badge, group, scrollspy). Loaded here
+       so they work on every page; float.js must precede menu.js/tooltip.js, and all
+       precede the deferred editor chrome that uses wui.float. -->
   <link rel="stylesheet" href="/wui/tooltip.css">
+  <link rel="stylesheet" href="/wui/menu.css">
+  <link rel="stylesheet" href="/wui/copy.css">
+  <link rel="stylesheet" href="/wui/badge.css">
+  <link rel="stylesheet" href="/wui/group.css">
+  <link rel="stylesheet" href="/wui/scroll.css">
+  <link rel="stylesheet" href="/wui/tabs.css">
+  {{/* scrollspy.css is not loaded: the theme fully styles the TOC (.toc__link +
+       .is-active) and sets heading scroll-margin itself; scrollspy.js drives it. */}}
   <script src="/wui/float.js" defer></script>
   <script src="/wui/tooltip.js" defer></script>
+  <script src="/wui/menu.js" defer></script>
+  <script src="/wui/copy.js" defer></script>
+  <script src="/wui/scrollspy.js" defer></script>
 </head>{{end}}
 
 {{define "sidebar"}}
@@ -45,17 +57,20 @@
       </a>
       {{if .Draft}}<span class="badge badge--draft">Draft</span>{{end}}
     </div>
+    {{/* Trailing cluster [GitHub][theme][Edit/Preview toggle] is identical in read + edit
+         mode, so only the leading item swaps (search ↔ editor actions) — the chrome doesn't
+         jump. The toggle keeps one place + style, flipping Edit↔Preview. */}}
     <div class="topbar__group">
       <button class="search-btn" data-search-open aria-label="Search">
         <i class="ph ph-magnifying-glass"></i>
         <span class="search-btn__label">Search</span>
         <kbd class="kbd"><span class="kbd__cmd">Ctrl</span> K</kbd>
       </button>
-      {{if and .CanEdit .EditSlug}}<a class="btn btn--sm" href="/__edit/{{.EditSlug}}"><i class="ph ph-pencil-simple"></i> Edit</a>{{end}}
       <a class="icon-btn" href="https://github.com/blazing-Gael/dcms" target="_blank" rel="noopener" aria-label="GitHub" data-tip="GitHub" data-tip-pos="bottom"><i class="ph ph-github-logo"></i></a>
       <button class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle theme" data-tip="Toggle theme" data-tip-pos="bottom">
         <i class="ph ph-moon icon-dark"></i><i class="ph ph-sun icon-light"></i>
       </button>
+      {{if and .CanEdit .EditSlug}}<a class="btn btn-ghost btn--sm topbar__toggle" href="/__edit/{{.EditSlug}}" data-tip="Edit this page" data-tip-pos="bottom"><i class="ph ph-pencil-simple"></i> Edit</a>{{end}}
     </div>
   </header>
 
@@ -83,6 +98,14 @@
   <script src="/assets/app.js" defer></script>
   <script src="/assets/feedback.js" defer></script>
   <script src="/assets/page-actions.js" defer></script>
+  <script src="/assets/toc.js" defer></script>
+  {{/* tabs.js enhances [wui] tabs + code-group into real tabs on the reading page and in
+       the static export. It is deliberately NOT loaded in the editor: without it the stored
+       anchor-link + section markup stays a plain list over all-visible panels, so every tab
+       is editable. */}}
+  <script src="/wui/tabs.js" defer></script>
+  {{/* page-actions.js now only wires the two AI links; copy + the dropdown menu
+       are wui.copy / wui.menu, enhancing the server-rendered markup in page.html. */}}
 </body>
 </html>{{end}}
 

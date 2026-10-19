@@ -11,14 +11,25 @@
     {{if or .Author .Updated .Badges .MDUrl}}
     <div class="doc__header">
       <div class="doc__meta">
+        {{/* "Last updated" lives at the bottom of the page (.doc__updated), not here. */}}
         {{if .Author}}<span class="doc__by"><i class="ph ph-user-circle"></i> {{.Author}}</span>{{end}}
-        {{if .Updated}}<span class="doc__meta-item"><i class="ph ph-clock-counter-clockwise"></i> Updated {{.Updated}}</span>{{end}}
-        {{range .Badges}}<span class="doc__badge">{{.}}</span>{{end}}
+        {{range .Badges}}<span class="wui-badge">{{.}}</span>{{end}}
       </div>
       {{if .MDUrl}}
-      <div class="doc__actions" data-page-actions data-md-url="{{.MDUrl}}" data-title="{{.Title}}">
-        <button type="button" class="doc-action doc-action--main" data-copy-page data-tip="Copy page as Markdown" data-tip-pos="bottom"><i class="ph ph-copy"></i><span class="doc-action__label">Copy page</span></button>
-        <button type="button" class="doc-action doc-action--caret" data-page-menu aria-label="Page options" aria-haspopup="true" aria-expanded="false" data-tip="Open in AI / Markdown" data-tip-pos="bottom"><i class="ph ph-caret-down"></i></button>
+      {{/* Split control: wui.copy fetches + copies the Markdown (no JS of ours);
+           wui.menu drives the dropdown. page-actions.js only fills the two AI hrefs. */}}
+      <div class="doc__actions wui-group" data-page-actions data-md-url="{{.MDUrl}}" data-title="{{.Title}}">
+        <button type="button" class="wui-copy wui-copy--label wui-copy--clipboard doc-copy" data-copy-url="{{.MDUrl}}" data-copy-tip="Copied" data-tip="Copy page as Markdown" data-tip-pos="bottom">
+          <span class="wui-copy-label"><span data-copy-idle>Copy page</span><span data-copy-done aria-hidden="true">Copied</span></span>
+        </button>
+        <button type="button" class="doc-caret" data-menu="#page-menu" aria-label="Page options" data-tip="Open in AI / Markdown" data-tip-pos="bottom"><i class="ph ph-caret-down"></i></button>
+      </div>
+      <div class="wui-menu wui-scroll" id="page-menu" role="menu">
+        <button type="button" class="wui-menu-item" data-copy-url="{{.MDUrl}}"><span class="wui-menu-ico"><i class="ph ph-copy"></i></span>Copy Markdown</button>
+        <a class="wui-menu-item" href="{{.MDUrl}}" target="_blank" rel="noopener"><span class="wui-menu-ico"><i class="ph ph-file-md"></i></span>View as Markdown</a>
+        <hr class="wui-menu-sep">
+        <a class="wui-menu-item" data-ai="chatgpt" href="#" target="_blank" rel="noopener"><span class="wui-menu-ico"><i class="ph ph-openai-logo"></i></span>Open in ChatGPT</a>
+        <a class="wui-menu-item" data-ai="claude" href="#" target="_blank" rel="noopener"><span class="wui-menu-ico"><i class="ph ph-sparkle"></i></span>Open in Claude</a>
       </div>
       {{end}}
     </div>
@@ -44,6 +55,8 @@
     </div>
     {{end}}
 
+    {{if .Updated}}<p class="doc__updated"><i class="ph ph-clock-counter-clockwise"></i> Last updated {{.Updated}}</p>{{end}}
+
     {{if or .Prev .Next}}
     <nav class="pager" aria-label="Page navigation">
       {{if .Prev}}<a class="pager__card pager__card--prev" href="/p/{{.Prev.Slug}}">
@@ -62,12 +75,20 @@
   </article>
   {{if .TOC}}
   <aside class="toc">
-    <nav class="toc__inner" aria-label="On this page" data-scrollspy data-scrollspy-content=".doc__body">
+    {{/* wui.scrollspy: data-spy-multi highlights EVERY section in view at once (a band
+         over consecutive links, not a single marker); data-spy-offset="0px" observes the
+         full viewport rather than a thin top band. Smooth-scrolls on click. */}}
+    <nav class="toc__inner wui-scroll" aria-label="On this page" data-scrollspy data-spy-multi data-spy-offset="0px">
       <div class="toc__title"><i class="ph ph-list-dashes"></i> On this page</div>
-      <ul class="toc__list">
-        {{range .TOC}}<li><a class="toc__link toc__link--h{{.Level}}" href="#{{.ID}}" data-scrollspy-link="{{.ID}}">{{.Text}}</a></li>
-        {{end}}
-      </ul>
+      {{/* .toc__glide is one element that slides to cover the active range (toc.js), so the
+           blanket glides between sections instead of each link's bg fading in and out. */}}
+      <div class="toc__body">
+        <div class="toc__glide" aria-hidden="true"></div>
+        <ul class="toc__list">
+          {{range .TOC}}<li><a class="toc__link toc__link--h{{.Level}}" href="#{{.ID}}">{{.Text}}</a></li>
+          {{end}}
+        </ul>
+      </div>
     </nav>
   </aside>
   {{end}}
